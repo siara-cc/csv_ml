@@ -1,3 +1,21 @@
+/*
+ * Copyright (C) 2015 arun@siara.cc
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * 
+ * @author Arundale R.
+ *
+ */
 package cc.siara.csv_ml;
 
 import java.io.IOException;
@@ -85,22 +103,22 @@ public class MultiLevelCSVParser {
        return;
     }
 
-	private String remove_from_seq_path(String cur_sequence_path) {
-		int idx = cur_sequence_path.lastIndexOf(".");
-		if (idx == -1) {
-			cur_sequence_path = "";
-			if (!csv_ml_schema.equals("no_schema")
-					|| csv_ml_node_name.equals("with_node_name"))
-				cur_sibling++;
-		} else {
-			if (!csv_ml_schema.equals("no_schema")
-					|| csv_ml_node_name.equals("with_node_name"))
-				cur_sibling = 1 + Integer.parseInt(cur_sequence_path
-						.substring(idx + 1).trim());
-			cur_sequence_path = cur_sequence_path.substring(0, idx);
-		}
-		return cur_sequence_path;
-	}
+    private String remove_from_seq_path(String cur_sequence_path) {
+        int idx = cur_sequence_path.lastIndexOf(".");
+        if (idx == -1) {
+            cur_sequence_path = "";
+            if (!csv_ml_schema.equals("no_schema")
+                    || csv_ml_node_name.equals("with_node_name"))
+                cur_sibling++;
+        } else {
+            if (!csv_ml_schema.equals("no_schema")
+                    || csv_ml_node_name.equals("with_node_name"))
+                cur_sibling = 1 + Integer.parseInt(cur_sequence_path
+                        .substring(idx + 1).trim());
+            cur_sequence_path = cur_sequence_path.substring(0, idx);
+        }
+        return cur_sequence_path;
+    }
 
     private String remove_from_path(String cur_path) {
        int idx = cur_path.lastIndexOf(".");
@@ -125,19 +143,19 @@ public class MultiLevelCSVParser {
        return cur_path;
     }
     private int deduce_column_state(char c, int cur_state) {
-		if (c == '/')
-			cur_state = ST_SCH_COL_ALIAS;
-		else if (c == '(')
-			cur_state = ST_SCH_COL_LEN;
-		else if (c == ')')
-			cur_state = ST_SCH_COL_TYPE;
-		else if (c == '=')
-			cur_state = ST_SCH_COL_DEF;
-		else if (c == '{')
-			cur_state = ST_SCH_COL_VAL;
-		else if (c == '}')
-			cur_state = 999;
-		return cur_state;
+        if (c == '/')
+            cur_state = ST_SCH_COL_ALIAS;
+        else if (c == '(')
+            cur_state = ST_SCH_COL_LEN;
+        else if (c == ')')
+            cur_state = ST_SCH_COL_TYPE;
+        else if (c == '=')
+            cur_state = ST_SCH_COL_DEF;
+        else if (c == '{')
+            cur_state = ST_SCH_COL_VAL;
+        else if (c == '}')
+            cur_state = 999;
+        return cur_state;
     }
     private void parse_column_schema(String value, MultiLevelCSVSchema.Column column_obj) throws IOException {
        int cur_state = ST_SCH_COL_NAME;
@@ -171,8 +189,8 @@ public class MultiLevelCSVParser {
                       col_type.append(c);
                   break;
              case ST_SCH_COL_DEF:
-           	      if (col_default == null)
-        		     col_default = new StringBuffer();
+                     if (col_default == null)
+                     col_default = new StringBuffer();
                   cur_state = deduce_column_state(c, cur_state);
                   if (cur_state == ST_SCH_COL_DEF)
                       col_default.append(c);
@@ -185,7 +203,7 @@ public class MultiLevelCSVParser {
            }
        }
        if (cur_state == ST_SCH_COL_DEF && col_default == null)
-    	  col_default = new StringBuffer();
+          col_default = new StringBuffer();
        List<String> col_values_list = new LinkedList<String>();
        if (col_values.length() == 0) {
           col_values_list.add("");
@@ -193,7 +211,7 @@ public class MultiLevelCSVParser {
           String val_csv = col_values.toString();
           CSVParser parser = new CSVParser(new ExceptionHandler());
           while (!csv_parser.isEOS()) {
-        	String token = parser.parseNextToken(new StringReader(val_csv));
+            String token = parser.parseNextToken(new StringReader(val_csv));
             col_values_list.add(token);
          }
        }
@@ -232,7 +250,7 @@ public class MultiLevelCSVParser {
           ex.set_err(ExceptionHandler.E_SCH_START_WITH_SPACE, csv_parser);
           return;
        } else
-    	  csv_parser.reInsertLastChar();
+          csv_parser.reInsertLastChar();
        do {
           String value = csv_parser.parseNextToken(r);
           boolean is_eol = csv_parser.isEOL();
@@ -282,7 +300,7 @@ public class MultiLevelCSVParser {
              schema.addNamePathNode(cur_path, node_obj);
              schema.setSeqPathNodeMap(cur_sequence_path, node_obj);
              if (csv_ml_node_name.equals("no_node_name")) {
-            	MultiLevelCSVSchema.Column column_obj = new MultiLevelCSVSchema.Column();
+                MultiLevelCSVSchema.Column column_obj = new MultiLevelCSVSchema.Column();
                 node_obj.addColumn(column_obj);
                 parse_column_schema(value, column_obj);
              }
@@ -299,14 +317,14 @@ public class MultiLevelCSVParser {
           if (is_eol) {
              int space_count = 0;
              nxt_char = csv_parser.readChar(r);
-			 while (nxt_char == ' '	|| nxt_char == '\t') {
-				space_count++;
-				nxt_char = csv_parser.readChar(r);
-			 }
-			 if (nxt_char == -1)
-				 return;
-			 else
-				 csv_parser.reInsertLastChar();
+             while (nxt_char == ' '    || nxt_char == '\t') {
+                space_count++;
+                nxt_char = csv_parser.readChar(r);
+             }
+             if (nxt_char == -1)
+                 return;
+             else
+                 csv_parser.reInsertLastChar();
              csv_parser.setColNo(csv_parser.getColNo()+space_count);
              if (space_count > (cur_level+1)) {
                 ex.set_err(ExceptionHandler.E_DOWN_2_LEVELS, csv_parser);
@@ -339,13 +357,13 @@ public class MultiLevelCSVParser {
        if (obj.containsKey("parent_ref"))
             obj.remove("parent_ref");
        for (Object set : obj.keySet()) {
-    	  String key = (String) set;
-    	  Object child_obj = obj.get(key);
+          String key = (String) set;
+          Object child_obj = obj.get(key);
           if (child_obj instanceof JSONArray) {
-        	 JSONArray ja = (JSONArray) child_obj;
+             JSONArray ja = (JSONArray) child_obj;
              for (Object ele : ja) {
                  if (ele instanceof JSONObject)
-            	    delete_parent_refs((JSONObject)ele);
+                    delete_parent_refs((JSONObject)ele);
              }
           } else
           if (child_obj instanceof JSONObject) {
@@ -377,7 +395,7 @@ public class MultiLevelCSVParser {
        } else {
           JSONObject jo = (JSONObject) cur_node;
           if (jo.get(node_name) == null) {
-        	  jo.put(node_name, new JSONArray());
+              jo.put(node_name, new JSONArray());
           }
           JSONArray ja = (JSONArray) jo.get(node_name);
           new_node = new JSONObject();
@@ -426,7 +444,7 @@ public class MultiLevelCSVParser {
           xml_str += ("></"+csv_ml_root+">");
           obj_out = Util.parseXMLToDOM(xml_str);
        } else {
-    	  JSONObject jo = new JSONObject();
+          JSONObject jo = new JSONObject();
           obj_out = jo;
        }
        Object cur_node = (dom_or_jso.equals("dom")?((Document)obj_out).getDocumentElement():obj_out);
@@ -554,14 +572,14 @@ public class MultiLevelCSVParser {
              }
              int space_count = 0;
              int nxt_char = csv_parser.readChar(r);
-			 while (nxt_char == ' '	|| nxt_char == '\t') {
-				space_count++;
-				nxt_char = csv_parser.readChar(r);
-			 }
-			 if (nxt_char == -1)
-				 break;
-			 else
-				 csv_parser.reInsertLastChar();
+             while (nxt_char == ' '    || nxt_char == '\t') {
+                space_count++;
+                nxt_char = csv_parser.readChar(r);
+             }
+             if (nxt_char == -1)
+                 break;
+             else
+                 csv_parser.reInsertLastChar();
              csv_parser.setColNo(csv_parser.getColNo()+space_count);
              if (space_count > (cur_level+1)) {
                 ex.set_err(ExceptionHandler.E_DOWN_2_LEVELS, csv_parser);
@@ -577,9 +595,9 @@ public class MultiLevelCSVParser {
                       if (cur_node == null)
                          cur_node = ((Document)obj_out).getDocumentElement();
                    } else {
-                	  JSONObject parent_ref = (JSONObject) ((JSONObject)cur_node).get("parent_ref");
+                      JSONObject parent_ref = (JSONObject) ((JSONObject)cur_node).get("parent_ref");
                       if (parent_ref != null)
-                    	 cur_node = parent_ref;
+                         cur_node = parent_ref;
                    }
                    cur_level--;
                 }

@@ -265,6 +265,8 @@ public class MultiLevelCSVParser {
           }
           if (token_ctr == 0 && !is0ref) {
              String node_name = value.trim();
+             if (node_name.indexOf(' ') != -1)
+                 node_name = node_name.replace(' ', '_');
              if (node_name.equals("") && is_eol) {
                 continue;
              }
@@ -551,6 +553,8 @@ public class MultiLevelCSVParser {
                    col_name = "c"+token_ctr;
                 } else
                    col_name = column_arr.get(token_ctr-1).getName();
+                if (col_name.indexOf(' ') != -1)
+                    col_name = col_name.replace(' ', '_');
                 if (dom_or_jso.equals("dom"))
                    ((Element)cur_node).setAttribute(col_name, value);
                 else

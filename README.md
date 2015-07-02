@@ -14,8 +14,12 @@ csv_ml is expected to
 
 For complete documentation and examples, download [csvdoc.pdf](csvdoc.pdf)
 
-For Swing demo application (executable jar), download [csv_ml_swing_demo-1.0.0.jar](csv_ml_swing_demo-1.0.0.jar)
+The examples given in the documentation are available as demo applications:
+* For Java Swing demo application (executable jar), download [csv_ml_swing_demo-1.0.0.jar](http://siara.cc/csv_ml/csv_ml_swing_demo-1.0.0.jar)
+* For Android demo application, download [csv_ml_android_demo-1.0.0.apk](http://siara.cc/csv_ml/csv_ml_android_demo-1.0.0.apk)
+* For Javascript demo application, [click here](http://siara.cc/csv_ml/csv_ml_js.html)
+* For Java Applet demo application [click here](http://siara.cc/csv_ml/csv_ml_applet_demo.html)
 
-For Android demo application, download [csv_ml_android_demo-1.0.0.apk](csv_ml_android_demo-1.0.0.apk)
+For running Javascript and Java Applet demos, you may have to change security settings in your browser.
 
 Contact arun@siara.cc for any queries or feedback.

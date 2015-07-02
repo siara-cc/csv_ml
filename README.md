@@ -12,6 +12,10 @@ csv_ml is expected to
 - used in EAI (Application Integration) for import and export of data
 - simpler to parse, allowing data to be available even in low memory devices
 
-For complete documentation and examples, download csvdoc.pdf
+For complete documentation and examples, download [csvdoc.pdf](https://github.com/siara-cc/csv_ml/csvdoc.pdf)
+
+For Swing demo application (executable jar), download [csv_ml_swing_demo-1.0.0.jar](https://github.com/siara-cc/csv_ml/csv_ml_swing_demo-1.0.0.jar)
+
+For Android demo application, download [csv_ml_android_demo-1.0.0.apk](https://github.com/siara-cc/csv_ml/csv_ml_android_demo-1.0.0.apk)
 
 Contact arun@siara.cc for any queries or feedback.

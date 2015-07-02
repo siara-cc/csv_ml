@@ -4,13 +4,13 @@ csv_ml attempts to provide a simple unambiguous format for representing structur
 
 csv_ml is expected to
 - save storage space
-- data transfer speeds
-- faster to parse compared to XML and JSON
-- full schema definition and validation
-- schema definition simple, lightweight and in-line compared to DTD or XML Schema
-- database binding
-- used in EAI (Application Integration) for import and export of data
-- simpler to parse, allowing data to be available even in low memory devices
+- increase data transfer speeds
+- be faster to parse compared to XML and JSON
+- allow full schema definition and validation
+- make schema definition simple, lightweight and in-line compared to DTD or XML Schema
+- allow database binding
+- be used in EAI (Application Integration) for import and export of data
+- be simpler to parse, allowing data to be available even in low memory devices
 
 For complete documentation and examples, download [csvdoc.pdf](https://github.com/siara-cc/csv_ml/csvdoc.pdf)
 

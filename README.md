@@ -12,7 +12,7 @@ csv_ml is expected to
 - be used in EAI (Application Integration) for import and export of data
 - be simpler to parse, allowing data to be available even in low memory devices
 
-For complete documentation and examples, download [csvdoc.pdf](csvdoc.pdf)
+For complete documentation and examples, download [csvdoc.pdf](http://siara.cc/csv_ml/csvdoc.pdf)
 
 The examples given in the documentation are available as demo applications:
 * For Java Swing demo application (executable jar), download [csv_ml_swing_demo-1.0.0.jar](http://siara.cc/csv_ml/csv_ml_swing_demo-1.0.0.jar)

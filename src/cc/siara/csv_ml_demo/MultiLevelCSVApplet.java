@@ -20,9 +20,20 @@ package cc.siara.csv_ml_demo;
 
 import javax.swing.JApplet;
 
+/**
+ * Applet wrapper for the Swing demo application Use following tag in HTML file
+ * to deploy it:
+ * 
+ * <applet archive="csv_ml_swing_demo-1.0.0.jar"
+ * code="cc.siara.csv_ml_demo.MultiLevelCSVApplet.class" height="600"
+ * width="800">Your browser does not support java applets</applet>
+ * 
+ * @author Arundale R.
+ */
 public class MultiLevelCSVApplet extends JApplet {
 
     private static final long serialVersionUID = -4489657640672417334L;
+
     public void init() {
         new MultiLevelCSVSwingDemo(this.getContentPane());
     }

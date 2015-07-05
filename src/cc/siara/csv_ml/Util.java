@@ -31,13 +31,25 @@ import javax.xml.transform.stream.StreamResult;
 import org.w3c.dom.Document;
 import org.xml.sax.InputSource;
 
+/**
+ * All miscellaneous static utility functions
+ * 
+ * @author Arundale R.
+ * @since 1.0
+ */
 public class Util {
 
+    /**
+     * Creates a Document object from initial XML given. This is required as it
+     * is not possible to instantiate a W3C Document interface using new.
+     * 
+     * @param xml_str
+     * @return
+     */
     public static Document parseXMLToDOM(String xml_str) {
         Document doc = null;
         try {
-            doc = DocumentBuilderFactory.newInstance()
-                    .newDocumentBuilder()
+            doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
                     .parse(new InputSource(new StringReader(xml_str)));
         } catch (Exception e) {
             e.printStackTrace();
@@ -45,6 +57,15 @@ public class Util {
         return doc;
     }
 
+    /**
+     * Converts W3C Document object to XML String
+     * 
+     * @param doc
+     *            Document object
+     * @param isPretty
+     *            Whether to indent and add new lines
+     * @return XML String
+     */
     public static String docToString(Document doc, boolean isPretty) {
         try {
             Transformer transformer = TransformerFactory.newInstance()
@@ -66,17 +87,16 @@ public class Util {
     }
 
     /**
-     * Removes the last number from current sequence path
-     * and returns it. If the path is 1.2.1, then this method
-     * returns 1.2.
+     * Removes the last number from current sequence path and returns it. If the
+     * path is 1.2.1, then this method returns 1.2.
      * 
      * Before removing, it extracts the last number as cur_sibling and
      * increments it, so that it can be used to form the next path
      * 
      * @param cur_sequence_path
-     *        Path from which to remove
+     *            Path from which to remove
      * @param csv_ml_schema
-     *        From directive - whether schema is present or not
+     *            From directive - whether schema is present or not
      */
     public static int removeFromSeqPath(StringBuffer cur_sequence_path,
             String csv_ml_schema, String csv_ml_node_name, int cur_sibling) {
@@ -104,40 +124,39 @@ public class Util {
     }
 
     /**
-     * Removes the last node from current path
-     * and returns it. If the path is a.b.c, then this method
-     * returns a.b.
+     * Removes the last node from current path and returns it. If the path is
+     * a.b.c, then this method returns a.b.
      * 
      * @param cur_path
      */
     public static void removeFromPath(StringBuffer cur_path) {
-       int idx = cur_path.lastIndexOf(".");
-       if (idx == -1)
-          cur_path.setLength(0);
-       else
-          cur_path.setLength(idx);
+        int idx = cur_path.lastIndexOf(".");
+        if (idx == -1)
+            cur_path.setLength(0);
+        else
+            cur_path.setLength(idx);
     }
 
     /**
-     * Appends number to current sequence path. If the path is
-     * 1.2, then this method returns 1.2.1
+     * Appends number to current sequence path. If the path is 1.2, then this
+     * method returns 1.2.1
      * 
      * @param cur_sequence_path
      *            The path to which number to be appended
      * @param cur_sibling
      *            The number to be appended
      */
-    public static void addToSeqPath(StringBuffer cur_sequence_path, int cur_sibling) {
-       if (cur_sequence_path.length() > 0) {
-          cur_sequence_path.append(".");
-       }
-       cur_sequence_path.append(cur_sibling);
+    public static void addToSeqPath(StringBuffer cur_sequence_path,
+            int cur_sibling) {
+        if (cur_sequence_path.length() > 0) {
+            cur_sequence_path.append(".");
+        }
+        cur_sequence_path.append(cur_sibling);
     }
 
     /**
-     * Appends node_name to current path. If the path is
-     * abc.pqr and node name is xyz then this method makes it
-     * abc.pqr.xyz
+     * Appends node_name to current path. If the path is abc.pqr and node name
+     * is xyz then this method makes it abc.pqr.xyz
      * 
      * @param cur_path
      *            The path to which to append
@@ -145,10 +164,10 @@ public class Util {
      *            The node_name to append
      */
     public static void addToPath(StringBuffer cur_path, String node_name) {
-       if (cur_path.length() > 0) {
-          cur_path.append(".");
-       }
-       cur_path.append(node_name);
+        if (cur_path.length() > 0) {
+            cur_path.append(".");
+        }
+        cur_path.append(node_name);
     }
 
 }

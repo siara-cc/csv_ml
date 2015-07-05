@@ -27,49 +27,99 @@ import org.w3c.dom.NodeList;
 
 import cc.siara.csv.CSVParser;
 
+/**
+ * Constructs csv_ml string from Document object
+ * 
+ * @author Arundale R.
+ * @since 1.0
+ */
 public class Outputter {
 
+    /**
+     * Constructs csv_ml string from Document object
+     * 
+     * @param dom
+     *            Input document
+     * @return output csv_ml string
+     */
     public static String generate(Document dom) {
-       StringBuffer schema = new StringBuffer("csv_ml,1.0\n");
-       StringBuffer data = new StringBuffer();
-       outputCSVRecursively(dom.getDocumentElement(), schema, data, "");
-       return schema.append("end_schema\n").append(data).toString();
+
+        // Initialize schema with default directive. TODO: to handle encoding,
+        // root and namespaces
+        StringBuffer schema = new StringBuffer("csv_ml,1.0\n");
+
+        StringBuffer data = new StringBuffer();
+        outputCSVRecursively(dom.getDocumentElement(), schema, data, "");
+        return schema.append("end_schema\n").append(data).toString();
+
     }
-    private static void outputCSVRecursively(Element ele, StringBuffer schema, StringBuffer data, String hierarchy_space_prefix) {
-       String node_name = ele.getNodeName();
-       boolean is_schema_updated = false;
-       if (schema.indexOf("\n"+hierarchy_space_prefix+node_name+",") != -1)
-          is_schema_updated = true;
-       if (ele.getParentNode().getParentNode() != null) {
-          if (!is_schema_updated) schema.append(hierarchy_space_prefix).append(node_name);
-          data.append(hierarchy_space_prefix).append(node_name);
-          NamedNodeMap attributes = ele.getAttributes();
-          for (int j=0; j<attributes.getLength(); j++) {
-             if (!is_schema_updated)
-                schema.append(",").append(attributes.item(j).getNodeName());
-             data.append(",").append(CSVParser.encodeToCSVText(attributes.item(j).getNodeValue()));
-          }
-          //String tc = ele.getTextContent();
-          //if (tc != null && !tc.equals(""))
-          //   data.append(",").append(CSVParser.encodeToCSVText(tc));
-          NodeList childNodes = ele.getChildNodes();
-          for (int i=0; i<childNodes.getLength(); i++) {
-             if (childNodes.item(i).getNodeType() != Node.CDATA_SECTION_NODE)
+
+    /**
+     * Builds the csv_ml string starting at the root node
+     * 
+     * @param ele Initially the root element
+     * @param schema
+     * @param data
+     * @param hierarchy_space_prefix
+     */
+    private static void outputCSVRecursively(Element ele, StringBuffer schema,
+            StringBuffer data, String hierarchy_space_prefix) {
+
+        String node_name = ele.getNodeName();
+
+        boolean is_schema_updated = false;
+        if (schema.indexOf("\n" + hierarchy_space_prefix + node_name + ",") != -1)
+            is_schema_updated = true;
+
+        // Export node
+        // TODO: does not generate data for root node
+        if (ele.getParentNode().getParentNode() != null) {
+
+            // Export node
+            if (!is_schema_updated)
+                schema.append(hierarchy_space_prefix).append(node_name);
+            data.append(hierarchy_space_prefix).append(node_name);
+
+            // Export attributes
+            NamedNodeMap attributes = ele.getAttributes();
+            for (int j = 0; j < attributes.getLength(); j++) {
+                if (!is_schema_updated)
+                    schema.append(",").append(attributes.item(j).getNodeName());
+                data.append(",").append(
+                        CSVParser.encodeToCSVText(attributes.item(j)
+                                .getNodeValue()));
+            }
+
+            // TODO: Is text content to be exported?
+            // String tc = ele.getTextContent();
+            // if (tc != null && !tc.equals(""))
+            // data.append(",").append(CSVParser.encodeToCSVText(tc));
+
+            // Export CData sections
+            NodeList childNodes = ele.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                if (childNodes.item(i).getNodeType() != Node.CDATA_SECTION_NODE)
+                    continue;
+                CDATASection cdata_section = (CDATASection) childNodes.item(i);
+                data.append(",").append(
+                        CSVParser.encodeToCSVText(cdata_section.getData()));
+            }
+            if (!is_schema_updated)
+                schema.append("\n");
+            data.append("\n");
+            hierarchy_space_prefix += " ";
+
+        }
+
+        // Recurse children
+        NodeList childNodes = ele.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            if (childNodes.item(i).getNodeType() != Node.ELEMENT_NODE)
                 continue;
-             CDATASection cdata_section = (CDATASection) childNodes.item(i);
-             data.append(",").append(CSVParser.encodeToCSVText(cdata_section.getData()));
-          }
-          if (!is_schema_updated)
-             schema.append("\n");
-          data.append("\n");
-          hierarchy_space_prefix += " ";
-       }
-       NodeList childNodes = ele.getChildNodes();
-       for (int i=0; i<childNodes.getLength(); i++) {
-          if (childNodes.item(i).getNodeType() != Node.ELEMENT_NODE)
-             continue;
-          outputCSVRecursively((Element)childNodes.item(i), schema, data, hierarchy_space_prefix);
-       }
+            outputCSVRecursively((Element) childNodes.item(i), schema, data,
+                    hierarchy_space_prefix);
+        }
+
     }
 
 }

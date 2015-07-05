@@ -22,4 +22,6 @@ The examples given in the documentation are available as demo applications:
 
 For running Javascript and Java Applet demos, you may have to change security settings in your browser.
 
+The given demos convert between CSV, XML and JSON (CSV to XML DOM, CSV to JSON, XML to CSV).
+
 Contact arun@siara.cc for any queries or feedback.

@@ -47,7 +47,7 @@ import org.xml.sax.InputSource;
 
 import cc.siara.csv_ml.DBBind;
 import cc.siara.csv_ml.MultiLevelCSVParser;
-import cc.siara.csv_ml.Output;
+import cc.siara.csv_ml.Outputter;
 import cc.siara.csv_ml.Util;
 
 public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
@@ -114,11 +114,11 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         MultiLevelCSVParser parser = new MultiLevelCSVParser();
         Document doc = null;
         try {
-            doc = (Document) parser.parse("dom", new StringReader(taInput.getText()), false);
-            String ex_str = parser.ex.get_all_exceptions();
+            doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
+            String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
-                if (parser.ex.error_code > 0) return null;
+                if (parser.getEx().getErrorCode() > 0) return null;
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, e.getMessage());
@@ -130,17 +130,17 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         MultiLevelCSVParser parser = new MultiLevelCSVParser();
         Document doc = null;
         try {
-            doc = (Document) parser.parse("dom", new StringReader(taInput.getText()), false);
-            String ex_str = parser.ex.get_all_exceptions();
+            doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
+            String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
-                if (parser.ex.error_code > 0) return;
+                if (parser.getEx().getErrorCode() > 0) return;
             }
             StringBuffer out_str = new StringBuffer();
-            DBBind.generateDDL(parser.get_schema(), out_str);
+            DBBind.generateDDL(parser.getSchema(), out_str);
             if (out_str.length() > 0) {
                out_str.append("\r\n");
-               DBBind.generate_dml_recursively(parser.get_schema(), doc.getDocumentElement(), "", out_str);
+               DBBind.generate_dml_recursively(parser.getSchema(), doc.getDocumentElement(), "", out_str);
             } else {
                out_str.append("No schema");
             }
@@ -163,7 +163,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
             JOptionPane.showMessageDialog(null, "Could not parse. XML expected in Output text box");
             return;
         }
-        String out_str = Output.generate(doc);
+        String out_str = Outputter.generate(doc);
         taInput.setText(out_str);
         tfInputSize.setText(String.valueOf(out_str.length()));
     }
@@ -185,11 +185,11 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
     void toJSON() {
         MultiLevelCSVParser parser = new MultiLevelCSVParser();
         try {
-            JSONObject jo = (JSONObject) parser.parse("jso", new StringReader(taInput.getText()), false);
-            String ex_str = parser.ex.get_all_exceptions();
+            JSONObject jo = parser.parseToJSO(new StringReader(taInput.getText()), false);
+            String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
-                if (parser.ex.error_code > 0) return;
+                if (parser.getEx().getErrorCode() > 0) return;
             }
             String outStr;
             if (cbPretty.isSelected()) {

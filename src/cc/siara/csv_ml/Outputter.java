@@ -18,6 +18,7 @@
  */
 package cc.siara.csv_ml;
 
+import org.w3c.dom.CDATASection;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
@@ -26,7 +27,7 @@ import org.w3c.dom.NodeList;
 
 import cc.siara.csv.CSVParser;
 
-public class Output {
+public class Outputter {
 
     public static String generate(Document dom) {
        StringBuffer schema = new StringBuffer("csv_ml,1.0\n");
@@ -48,9 +49,16 @@ public class Output {
                 schema.append(",").append(attributes.item(j).getNodeName());
              data.append(",").append(CSVParser.encodeToCSVText(attributes.item(j).getNodeValue()));
           }
-          String tc = ele.getTextContent();
-          if (tc != null && !tc.equals(""))
-             data.append(",").append(CSVParser.encodeToCSVText(tc));
+          //String tc = ele.getTextContent();
+          //if (tc != null && !tc.equals(""))
+          //   data.append(",").append(CSVParser.encodeToCSVText(tc));
+          NodeList childNodes = ele.getChildNodes();
+          for (int i=0; i<childNodes.getLength(); i++) {
+             if (childNodes.item(i).getNodeType() != Node.CDATA_SECTION_NODE)
+                continue;
+             CDATASection cdata_section = (CDATASection) childNodes.item(i);
+             data.append(",").append(CSVParser.encodeToCSVText(cdata_section.getData()));
+          }
           if (!is_schema_updated)
              schema.append("\n");
           data.append("\n");

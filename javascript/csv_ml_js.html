@@ -1135,7 +1135,7 @@ function evalXPath() {
    document.getElementById("out").value = "";
    for (var i=0; i<ret_arr.length; i++) {
        if (typeof(ret_arr[i]) == "object")
-          document.getElementById("out").value += prettyPrint(serializer.serializeToString(ret_arr[i]));
+          document.getElementById("out").value += XMLUtil.prettyPrint(serializer.serializeToString(ret_arr[i]));
        else
           document.getElementById("out").value += ret_arr[i];
    }
@@ -1266,7 +1266,7 @@ student,name,age
 1,b,23,His record is remarkable
 1,c,24,His record is remarkable,His performance is exemplary
 </textarea>
-<input type=hidden id=ex3.1_xpath value="/root/student[@name='c']/text()"/>
+<input type=hidden id=ex3.1_xpath value="/root/student[@name='c']"/>
 <textarea id=ex3.2_textarea style="display:none">
 csv_ml,1.0
 student
@@ -1297,7 +1297,7 @@ one
 
 line"
 </textarea>
-<input type=hidden id=ex3.3_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.3_xpath value="/root/sample[3]/@text"/>
 <textarea id=ex3.4_textarea style="display:none">
 /* You can have comments anywhere,
    even at the beginning
@@ -1314,26 +1314,26 @@ sample,text1,text2
 comment */
 /* Comment at beginning of line */1, "fourth" , "line"
 </textarea>
-<input type=hidden id=ex3.4_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.4_xpath value="/root/sample[2]/@text2"/>
 <textarea id=ex3.5.1_textarea style="display:none">
 csv_ml,1.0,UTF-8,data
 student,name,age
 1,a,24
 </textarea>
-<input type=hidden id=ex3.5.1_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.5.1_xpath value="/data/student/@name"/>
 <textarea id=ex3.5.2_textarea style="display:none">
 csv_ml,1.0,UTF-8,student
 student,name,age
 1,a,24
 </textarea>
-<input type=hidden id=ex3.5.2_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.5.2_xpath value="/student/@name"/>
 <textarea id=ex3.5.3_textarea style="display:none">
 csv_ml,1.0,UTF-8,student
 student,name,age
 1,a,24
 1,b,35
 </textarea>
-<input type=hidden id=ex3.5.3_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.5.3_xpath value="/root"/>
 <textarea id=ex3.5.4_textarea style="display:none">
 csv_ml,1.0,UTF-8,student
 student,name,age
@@ -1341,21 +1341,21 @@ faculty,name,age
 1,a,24
 2,b,45
 </textarea>
-<input type=hidden id=ex3.5.4_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.5.4_xpath value="/root"/>
 <textarea id=ex3.6.1_textarea style="display:none">
 csv_ml,1.0
 our:student,his:name,age,xmlns:his,xmlns:our
 1,a,24,http://siara.cc/his,http://siara.cc/our
 1,b,26,http://siara.cc/his,http://siara.cc/our
 </textarea>
-<input type=hidden id=ex3.6.1_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.6.1_xpath value="/root/our:student[his:name='b']"/>
 <textarea id=ex3.6.2_textarea style="display:none">
 csv_ml,1.0,UTF-8,root/our='http://siara.cc/our' his='http://siara.cc/his'
 our:student,his:name,age
 1,a,24
 1,b,26
 </textarea>
-<input type=hidden id=ex3.6.2_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.6.2_xpath value="/root/our:student[his:name='b']"/>
 <textarea id=ex3.6.3_textarea style="display:none">
 csv_ml,1.0,UTF-8,xsl:stylesheet/xsl='http://www.w3.org/1999/XSL/Transform'
 xsl:stylesheet,version
@@ -1366,7 +1366,7 @@ xsl:stylesheet,version
   1,@name
   1,@age
 </textarea>
-<input type=hidden id=ex3.6.3_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.6.3_xpath value="/xsl:stylesheet"/>
 <textarea id=ex3.7_textarea style="display:none">
 csv_ml,1.0,UTF-8,xsl:stylesheet/xsl='http://www.w3.org/1999/XSL/Transform'
 01,xsl:value-of,select
@@ -1383,49 +1383,49 @@ xsl:stylesheet,version
    01,@course_name
    01,@year_passed
 </textarea>
-<input type=hidden id=ex3.7_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex3.7_xpath value="/xsl:stylesheet"/>
 <textarea id=ex4.1_textarea style="display:none">
 csv_ml,1.0
 student,name(40)text,subject(30)text,marks(3)integer
 1,abc,physics,53
 1,xyz,physics,73
 </textarea>
-<input type=hidden id=ex4.1_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.1_xpath value=""/>
 <textarea id=ex4.2_textarea style="display:none">
 csv_ml,1.0
 student,name(40)text,subject(30)text=physics,marks(3)integer
 1,abc,maths,53
 1,xyz,chemistry,73
 </textarea>
-<input type=hidden id=ex4.2_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.2_xpath value=""/>
 <textarea id=ex4.3.1_textarea style="display:none">
 csv_ml,1.0
 student,name(40)text,nick(30)text=null,subject(30)text,marks(3)integer
 1,abc,pqr,physics,53
 1,xyz,,physics,73
 </textarea>
-<input type=hidden id=ex4.3.1_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.3.1_xpath value=""/>
 <textarea id=ex4.3.2_textarea style="display:none">
 csv_ml,1.0
 student,name(40)text,nick(30)text=,subject(30)text,marks(3)integer
 1,abc,pqr,physics,53
 1,xyz,,physics,73
 </textarea>
-<input type=hidden id=ex4.3.2_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.3.2_xpath value=""/>
 <textarea id=ex4.4_textarea style="display:none">
 csv_ml,1.0
 student,name(40)text,subject(30)text,"marks(6,2)numeric"
 1,abc,physics,53.34
 1,xyz,physics,73.5
 </textarea>
-<input type=hidden id=ex4.4_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.4_xpath value=""/>
 <textarea id=ex4.5_textarea style="display:none">
 csv_ml,1.0
 student,name,subject,marks,birth_date()date,join_date_time()datetime
 1,abc,physics,53.34,1982-01-23,2014-02-22 09:30:00
 1,xyz,physics,73.5,1985-11-12,2014-02-24 15:45:30
 </textarea>
-<input type=hidden id=ex4.5_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.5_xpath value=""/>
 <textarea id=ex4.6_textarea style="display:none">
 csv_ml,1.0
 student,id,name,subject,marks
@@ -1434,7 +1434,7 @@ student,id,name,subject,marks
 1,3,xyz,physics,73
 1,*4,xyz,physics,73
 </textarea>
-<input type=hidden id=ex4.6_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.6_xpath value=""/>
 <textarea id=ex4.7_textarea style="display:none">
 csv_ml,1.0
 student,name,age
@@ -1446,7 +1446,7 @@ student,name,age
  2,pqr,bbb,executive
  2,mno,bbb,director's secretary
 </textarea>
-<input type=hidden id=ex4.7_xpath value="/root/sample/@text"/>
+<input type=hidden id=ex4.7_xpath value=""/>
 
 <textarea id=ex101_textarea style="display:none">
 /* This is an example of how comments can be used inside csv*/ csv_ml,1.0

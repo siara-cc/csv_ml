@@ -35,14 +35,20 @@ import javax.swing.JOptionPane;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathConstants;
+import javax.xml.xpath.XPathExpression;
 import javax.xml.xpath.XPathExpressionException;
 import javax.xml.xpath.XPathFactory;
 
 import org.json.simple.JSONObject;
 import org.json.simple.JSONWriter;
 import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 import org.xml.sax.InputSource;
 
 import cc.siara.csv_ml.DBBind;
@@ -50,17 +56,30 @@ import cc.siara.csv_ml.MultiLevelCSVParser;
 import cc.siara.csv_ml.Outputter;
 import cc.siara.csv_ml.Util;
 
-public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
+/**
+ * Swing application to demonstrate the features of MultiLevelCSVParser
+ * 
+ * @author Arundale R.
+ */
+public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
+        Runnable {
 
     private static final long serialVersionUID = 5786609711433744144L;
+
+    /**
+     * Constructor that adds components to the container, sets layout and opens
+     * with window
+     * 
+     * @param container
+     */
     public MultiLevelCSVSwingDemo(Container container) {
         if (container == null)
-           container = this;
+            container = this;
         if (container instanceof JFrame) {
-           JFrame frame = (JFrame) container;
-           frame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
-           frame.setLocationByPlatform(true);
-           frame.setTitle("Demonstration of Multi-level CSV parsing (csv_ml)");
+            JFrame frame = (JFrame) container;
+            frame.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+            frame.setLocationByPlatform(true);
+            frame.setTitle("Demonstration of Multi-level CSV parsing (csv_ml)");
         }
         container.setSize(800, 600);
         container.setLayout(new FlowLayout(FlowLayout.LEFT, 6, 6));
@@ -94,22 +113,36 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         setVisible(true);
     }
 
+    /**
+     * Sets value to textbox and scrolls to top
+     */
     void setInputText() {
-        String egString = aExampleCSV[cbExamples.getSelectedIndex()];
+        int selectedIdx = cbExamples.getSelectedIndex();
+        String egString = aExampleCSV[selectedIdx];
         taInput.setText(egString);
         tfInputSize.setText(String.valueOf(egString.length()));
         taInput.setCaretPosition(0);
+        tfXPath.setText(aExampleXPath[selectedIdx]);
     }
 
+    /**
+     * Parses string from input textbox and sets to output
+     */
     void toXML() {
         Document doc = parseInputToDOM();
-        if (doc == null) return;
+        if (doc == null)
+            return;
         String xmlString = Util.docToString(doc, cbPretty.isSelected());
         taOutput.setText(xmlString);
         tfOutputSize.setText(String.valueOf(xmlString.length()));
         taOutput.setCaretPosition(0);
     }
 
+    /**
+     * Parses string from input textbox into Document object
+     * 
+     * @return W3C Document object
+     */
     private Document parseInputToDOM() {
         MultiLevelCSVParser parser = new MultiLevelCSVParser();
         Document doc = null;
@@ -118,7 +151,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
-                if (parser.getEx().getErrorCode() > 0) return null;
+                if (parser.getEx().getErrorCode() > 0)
+                    return null;
             }
         } catch (IOException e) {
             JOptionPane.showMessageDialog(null, e.getMessage());
@@ -126,6 +160,11 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         }
         return doc;
     }
+
+    /**
+     * Parses input from textbox and generates DDL/DML statements and sets to
+     * output text box
+     */
     private void toDDLDML() {
         MultiLevelCSVParser parser = new MultiLevelCSVParser();
         Document doc = null;
@@ -134,15 +173,17 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
-                if (parser.getEx().getErrorCode() > 0) return;
+                if (parser.getEx().getErrorCode() > 0)
+                    return;
             }
             StringBuffer out_str = new StringBuffer();
             DBBind.generateDDL(parser.getSchema(), out_str);
             if (out_str.length() > 0) {
-               out_str.append("\r\n");
-               DBBind.generate_dml_recursively(parser.getSchema(), doc.getDocumentElement(), "", out_str);
+                out_str.append("\r\n");
+                DBBind.generate_dml_recursively(parser.getSchema(),
+                        doc.getDocumentElement(), "", out_str);
             } else {
-               out_str.append("No schema");
+                out_str.append("No schema");
             }
             taOutput.setText(out_str.toString());
             tfOutputSize.setText(String.valueOf(out_str.length()));
@@ -152,15 +193,20 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         }
     }
 
+    /**
+     * Converts XML in output text box back to csv_ml and sets to input text box
+     */
     private void xmlToCSV() {
         Document doc = null;
         try {
-            doc = DocumentBuilderFactory.newInstance()
+            doc = DocumentBuilderFactory
+                    .newInstance()
                     .newDocumentBuilder()
                     .parse(new InputSource(new StringReader(taOutput.getText())));
         } catch (Exception e) {
             e.printStackTrace();
-            JOptionPane.showMessageDialog(null, "Could not parse. XML expected in Output text box");
+            JOptionPane.showMessageDialog(null,
+                    "Could not parse. XML expected in Output text box");
             return;
         }
         String out_str = Outputter.generate(doc);
@@ -168,28 +214,78 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         tfInputSize.setText(String.valueOf(out_str.length()));
     }
 
+    /**
+     * Evaluates given XPath from Input box against Document generated by
+     * parsing csv_ml in input box and sets value or node list to output box.
+     */
     private void processXPath() {
         XPath xpath = XPathFactory.newInstance().newXPath();
         Document doc = parseInputToDOM();
-        if (doc == null) return;
-        String out_str = null;
+        if (doc == null)
+            return;
+        StringBuffer out_str = new StringBuffer();
         try {
-            out_str = xpath.evaluate(tfXPath.getText(), doc);
+            XPathExpression expr = xpath.compile(tfXPath.getText());
+            try {
+                Document outDoc = Util.parseXMLToDOM("<output></output>");
+                Element rootElement = outDoc.getDocumentElement();
+                NodeList ret = (NodeList) expr.evaluate(doc,
+                        XPathConstants.NODESET);
+                for (int i = 0; i < ret.getLength(); i++) {
+                    Object o = ret.item(i);
+                    if (o instanceof String) {
+                        out_str.append(o);
+                    } else if (o instanceof Node) {
+                        Node n = (Node) o;
+                        short nt = n.getNodeType();
+                        switch (nt) {
+                        case Node.TEXT_NODE:
+                        case Node.ATTRIBUTE_NODE:
+                        case Node.CDATA_SECTION_NODE: // Only one value gets
+                                                      // evaluated?
+                            if (out_str.length() > 0)
+                                out_str.append(',');
+                            if (nt == Node.ATTRIBUTE_NODE)
+                                out_str.append(n.getNodeValue());
+                            else
+                                out_str.append(n.getTextContent());
+                            break;
+                        case Node.ELEMENT_NODE:
+                            rootElement.appendChild(outDoc.importNode(n, true));
+                            break;
+                        }
+                    }
+                }
+                if (out_str.length() > 0) {
+                    rootElement.setTextContent(out_str.toString());
+                    out_str.setLength(0);
+                }
+                out_str.append(Util.docToString(outDoc, true));
+            } catch (Exception e) {
+                // Thrown most likely because the given XPath evaluates to a
+                // string
+                out_str.append(expr.evaluate(doc));
+            }
         } catch (XPathExpressionException e) {
             e.printStackTrace();
         }
-        taOutput.setText(out_str);
+        taOutput.setText(out_str.toString());
         tfOutputSize.setText(String.valueOf(out_str.length()));
     }
 
+    /**
+     * Parses csv_ml from input box to JSON object and sets to output text box
+     */
     void toJSON() {
         MultiLevelCSVParser parser = new MultiLevelCSVParser();
         try {
-            JSONObject jo = parser.parseToJSO(new StringReader(taInput.getText()), false);
+            JSONObject jo = parser.parseToJSO(
+                    new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
-                if (parser.getEx().getErrorCode() > 0) return;
+                if (parser.getEx().getErrorCode() > 0)
+                    return;
             }
             String outStr;
             if (cbPretty.isSelected()) {
@@ -211,6 +307,12 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
         }
     }
 
+    /*
+     * (non-Javadoc)
+     * 
+     * @see
+     * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
+     */
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(cbExamples))
             setInputText();
@@ -226,35 +328,31 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
             xmlToCSV();
     }
 
+    // List of example titles (of csv_ml) corresponding to documentation
     String[] aExamples = new String[] { "1.1: Conventional CSV",
             "1.2: Conventional CSV with Header",
             "1.3: Conventional CSV with Header and Node name",
             "1.4: Conventional CSV with Header and Node index",
-            "1.5: Multiple nodes under root",
-            "2.1: Multiple level CSV data",
+            "1.5: Multiple nodes under root", "2.1: Multiple level CSV data",
             "2.2: Multiple level CSV data with siblings",
-            "3.1: Node attributes",
-            "3.2: Node content",
-            "3.3: Quote handling",
+            "3.1: Node attributes", "3.2: Node content", "3.3: Quote handling",
             "3.4: Inline comments and empty lines",
             "3.5.1: Changing root node",
             "3.5.2: Changing root node - data node as root",
             "3.5.3: Changing root node - error case 1",
             "3.5.4: Changing root node - error case 2",
-            "3.6.1: Namespaces (1)",
-            "3.6.2: Namespaces (2)",
-            "3.6.3: Namespaces (3)",
-            "3.7: Re-using node definitions",
+            "3.6.1: Namespaces (1)", "3.6.2: Namespaces (2)",
+            "3.6.3: Namespaces (3)", "3.7: Re-using node definitions",
             "4.1: Schema - Specifying type and length",
-            "4.2: Schema - Default value",
-            "4.3.1: Schema - Null values (1)",
+            "4.2: Schema - Default value", "4.3.1: Schema - Null values (1)",
             "4.3.2: Schema - Null values (2)",
-            "4.4: Schema - Precision and Scale",
-            "4.5: Schema - Date and Time",
+            "4.4: Schema - Precision and Scale", "4.5: Schema - Date and Time",
             "4.6: Schema - Special column 'id'",
             "4.7: Schema - Special column 'parent_id'" };
 
-    String[] aExampleCSV = new String[] { "abc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
+    // List of example csv_ml corresponding to documentation
+    String[] aExampleCSV = new String[] {
+            "abc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
             "csv_ml,1.0,UTF-8,root,no_node_name,inline\nname,subject,marks\nabc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
             "csv_ml,1.0,UTF-8,root,with_node_name,inline\nstudent,name,subject,marks\nend_schema\nstudent,abc,physics,53\nstudent,abc,chemistry,65\nstudent,xyz,physics,73\nstudent,xyz,chemistry,76",
             "csv_ml,1.0\nstudent,name,subject,marks\n1,abc,physics,53\n1,abc,chemistry,65\n1,xyz,physics,73\n1,xyz,chemistry,76",
@@ -280,8 +378,24 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
             "csv_ml,1.0\nstudent,name(40)text,subject(30)text,\"marks(6,2)numeric\"\n1,abc,physics,53.34\n1,xyz,physics,73.5",
             "csv_ml,1.0\nstudent,name,subject,marks,birth_date()date,join_date_time()datetime\n1,abc,physics,53.34,1982-01-23,2014-02-22 09:30:00\n1,xyz,physics,73.5,1985-11-12,2014-02-24 15:45:30",
             "csv_ml,1.0\nstudent,id,name,subject,marks\n1,,abc,physics,53\n1,,abc,chemistry,54\n1,3,xyz,physics,73\n1,*4,xyz,physics,73",
-            "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n references,name,company,designation\n1,abc,24\n 1,bs,2010\n 1,ms,2012\n 2,pqr,bbb,executive\n 2,mno,bbb,director's secretary"};
+            "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n references,name,company,designation\n1,abc,24\n 1,bs,2010\n 1,ms,2012\n 2,pqr,bbb,executive\n 2,mno,bbb,director's secretary" };
 
+    String[] aExampleXPath = new String[] {
+            "concat('Total of xyz:', sum(root/n1[@c1='xyz']/@c3))",
+            "concat('Total of xyz:', sum(root/n1[@name='xyz']/@marks))",
+            "concat('Total of xyz:', sum(root/student[@name='xyz']/@marks))",
+            "concat('Total of xyz:', sum(root/student[@name='xyz']/@marks))",
+            "concat('Total of xyz:', sum(root/student[@name='xyz']/@marks))",
+            "/root/student[education/subject/@marks > 80]",
+            "/root/student[education/subject/@marks > 80]",
+            "/root/student[@name='c']/text()", "/root/student/name/text()",
+            "/root/sample[3]/@text", "/root/sample[2]/@text2",
+            "/data/student/@name", "/student/@name", "/root", "/root",
+            "/root/our:student[his:name='b']",
+            "/root/our:student[his:name='b']", "/xsl:stylesheet",
+            "/xsl:stylesheet", "","","","","","","","","","" };
+
+    // Components
     JLabel lblInput = new JLabel("Input (csv):");
     JComboBox<String> cbExamples = new JComboBox<String>(aExamples);
     JLabel lblInputSize = new JLabel("Input size:");
@@ -301,8 +415,23 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener {
     JLabel lblOutputSize = new JLabel("Output size:");
     JTextField tfOutputSize = new JTextField("0", 4);
 
+    /**
+     * Main method to invoke the application
+     * 
+     * @param args
+     */
     public static void main(String args[]) {
-        new MultiLevelCSVSwingDemo(null);
+        SwingUtilities.invokeLater(new MultiLevelCSVSwingDemo(null));
+    }
+
+    /* 
+     * Thread that initiates the Swing application
+     * No code is required here
+     * 
+     * (non-Javadoc)
+     * @see java.lang.Runnable#run()
+     */
+    public void run() {
     }
 
 }

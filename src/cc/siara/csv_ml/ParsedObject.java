@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 arun@siara.cc
+ * Copyright (C) 2015 Siara Logics (cc)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@
  *
  */
 package cc.siara.csv_ml;
+
+import java.util.Hashtable;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
@@ -37,28 +39,23 @@ public class ParsedObject {
 
     public static final short TARGET_W3C_DOC = 1;
     public static final short TARGET_JSON_OBJ = 2;
+    static final String generalNSURI = "http://siara.cc/ns";
 
     Document doc = null;
     Node cur_element = null;
+    Element last_element = null;
 
     JSONObject jo = null;
     JSONObject cur_jo = null;
+    JSONObject last_jo = null;
 
     short target = TARGET_JSON_OBJ;
     String csv_ml_root = null;
+    String csv_ml_encoding = null;
     ExceptionHandler ex = null;
 
-    /**
-     * Initialize object sets as JSON object by default Need to call the other
-     * constructor for Document object
-     * 
-     * @param ex
-     */
-    public ParsedObject(ExceptionHandler ex) {
-        this.ex = ex;
-        jo = new JSONObject();
-        cur_jo = jo;
-    }
+    Hashtable<String, String> nsMap = new Hashtable<String, String>();
+    Hashtable<String, String> pendingAttributes = new Hashtable<String, String>();
 
     /**
      * Initialize to build Document object
@@ -69,16 +66,79 @@ public class ParsedObject {
      *            Any global namespaces to build initial Document
      * @param ex
      */
-    public ParsedObject(String csv_ml_root, String[] ns_uri, ExceptionHandler ex) {
-        String xml_str = "<" + csv_ml_root;
-        for (int j = 0; j < ns_uri.length; j++)
-            xml_str += (" xmlns:" + ns_uri[j]);
-        xml_str += ("></" + csv_ml_root + ">");
-        doc = Util.parseXMLToDOM(xml_str);
-        cur_element = doc.getDocumentElement();
+    public ParsedObject(String csv_ml_root, String csv_ml_encoding,
+            ExceptionHandler ex, short targetObject) {
+
+        this.target = targetObject;
         this.ex = ex;
         this.csv_ml_root = csv_ml_root;
-        this.target = TARGET_W3C_DOC;
+        this.csv_ml_encoding = csv_ml_encoding;
+        if (target == TARGET_JSON_OBJ) {
+            jo = new JSONObject();
+            cur_jo = jo;
+            last_jo = cur_jo;
+        } else {
+
+            // Look for namespace in the csv_ml_root directive
+            // (If namespaces need to be defined at the root they
+            // can be enumerated after the root delimited with
+            // space).
+            String namespace = "";
+            String[] ns_uri = new String[0];
+            int e_idx = csv_ml_root.indexOf("/");
+            if (e_idx > 0) {
+                ns_uri = csv_ml_root.substring(e_idx + 1).split(" ");
+                csv_ml_root = csv_ml_root.substring(0, e_idx);
+            }
+
+            // Check whether root element has a prefix
+            String rootNSPrefix = "";
+            int cIdx = csv_ml_root.indexOf(":");
+            if (cIdx > 0)
+                rootNSPrefix = csv_ml_root.substring(0, cIdx);
+            boolean rootNSURIFound = false;
+
+            // Build XML String for obtaining initial Document object
+            StringBuffer xml_str = new StringBuffer();
+            xml_str.append("<").append(csv_ml_root);
+            for (int j = 0; j < ns_uri.length; j++) {
+                int equalIdx = ns_uri[j].indexOf('=');
+                if (equalIdx == -1)
+                    break; // error condition. report?
+                String ns_prefix = ns_uri[j].substring(0, equalIdx);
+                nsMap.put(ns_prefix, ns_uri[j].substring(equalIdx + 1));
+                if (ns_prefix.equals(ns_prefix))
+                    rootNSURIFound = true;
+                xml_str.append(" xmlns:").append(ns_uri[j]);
+            }
+            // Use General Namespace prefix if one not defined.
+            if (rootNSPrefix.length() > 0 && !rootNSURIFound) {
+                xml_str.append(" xmlns:").append(rootNSPrefix).append("='")
+                        .append(generalNSURI).append("'");
+            }
+            xml_str.append("></").append(csv_ml_root).append(">");
+
+            // Parse and return document
+            doc = Util.parseXMLToDOM(xml_str.toString());
+            last_element = doc.getDocumentElement();
+            cur_element = last_element;
+            // TODO: How to set document encoding? Is it automatic?
+
+        }
+
+    }
+
+    /**
+     * Associates URI with a namespace prefix
+     * 
+     * @param nsPrefix
+     *            Namespace prefix
+     * @param nsURI
+     *            URI to be associated with prefix
+     * @param ex
+     */
+    public void setNSMap(String nsPrefix, String nsURI) {
+        nsMap.put(nsPrefix, nsURI);
     }
 
     /**
@@ -88,7 +148,7 @@ public class ParsedObject {
      *            Name of new element to be created
      */
     private void addNewElement(String node_name) {
-        Node new_node = null;
+        Element new_node = null;
         if (cur_element.getNodeType() == Node.DOCUMENT_NODE) {
             // If given input tries to add more than one root, throw error
             ex.set_err(MultiLevelCSVParser.E_ONLY_ONE_ROOT);
@@ -102,8 +162,29 @@ public class ParsedObject {
                 cur_element.appendChild(new_node);
             }
         }
-        if (new_node != null)
-            cur_element = new_node;
+        if (new_node != null) {
+            last_element = new_node;
+            cur_element = last_element;
+        }
+    }
+
+    /**
+     * Performas any pending activity against an element to finalize it. In this
+     * case, it adds any pending attributes needing namespace mapping.
+     */
+    public void finalizeElement() {
+        if (pendingAttributes.size() == 0)
+            return;
+        for (String col_name : pendingAttributes.keySet()) {
+            String value = pendingAttributes.get(col_name);
+            int cIdx = col_name.indexOf(':');
+            String ns = col_name.substring(0, cIdx);
+            String nsURI = nsMap.get(ns);
+            if (nsURI == null)
+                nsURI = generalNSURI;
+            ((Element) cur_element).setAttributeNS(nsURI, col_name, value);
+        }
+        pendingAttributes = new Hashtable<String, String>();
     }
 
     /**
@@ -124,6 +205,7 @@ public class ParsedObject {
         new_node.put("parent_ref", cur_jo);
         ja.add(new_node);
         cur_jo = new_node;
+        last_jo = cur_jo;
     }
 
     /**
@@ -150,9 +232,20 @@ public class ParsedObject {
      */
     public void setAttribute(String col_name, String value) {
         if (target == TARGET_W3C_DOC) {
-            if (cur_element.getNodeType() == Node.ELEMENT_NODE
-                    && col_name.indexOf("xmlns:") != 0)
-                ((Element) cur_element).setAttribute(col_name, value);
+            if (cur_element.getNodeType() == Node.ELEMENT_NODE) {
+                int cIdx = col_name.indexOf(':');
+                if (cIdx == -1)
+                    ((Element) cur_element).setAttribute(col_name, value);
+                else {
+                    String ns = col_name.substring(0, cIdx);
+                    String nsURI = nsMap.get(ns);
+                    if (nsURI == null)
+                        pendingAttributes.put(col_name, value);
+                    else
+                        ((Element) cur_element).setAttributeNS(nsURI, col_name,
+                                value);
+                }
+            }
         } else
             cur_jo.put(col_name, value);
     }
@@ -182,8 +275,9 @@ public class ParsedObject {
      */
     public void traverseToParent() {
         if (target == TARGET_W3C_DOC) {
-            if (cur_element.getNodeType() != Node.DOCUMENT_NODE)
+            if (cur_element.getNodeType() != Node.DOCUMENT_NODE) {
                 cur_element = cur_element.getParentNode();
+            }
         } else {
             JSONObject parent_ref = (JSONObject) cur_jo.get("parent_ref");
             cur_jo = parent_ref;
@@ -252,6 +346,24 @@ public class ParsedObject {
      */
     public JSONObject getJSONObject() {
         return jo;
+    }
+
+    /**
+     * Getter for currently constructed object
+     * 
+     * @return JSONObject
+     */
+    public JSONObject getCurrentJSO() {
+        return last_jo;
+    }
+
+    /**
+     * Getter for currently constructed object
+     * 
+     * @return Element
+     */
+    public Element getCurrentElement() {
+        return last_element;
     }
 
 }

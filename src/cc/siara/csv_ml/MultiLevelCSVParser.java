@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 arun@siara.cc
+ * Copyright (C) 2015 Siara Logics (cc)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,9 +56,6 @@ public class MultiLevelCSVParser {
                                         // should contain valid path to file
     String csv_ml_schema_file = ""; // path to schema file
 
-    // Members
-    int cur_sibling = 1;
-
     // Associated classes
     MultiLevelCSVSchema schema = new MultiLevelCSVSchema();
     Counter counter = new Counter();
@@ -72,6 +69,19 @@ public class MultiLevelCSVParser {
     public static final short E_TOO_MANY_CHARS = 6;
     public static final short E_NODE_NOT_FOUND = 7;
     public static final short E_ONLY_ONE_ROOT = 8;
+
+    // Transient variables used during parsing
+    // These are not members
+    private int cur_sibling = 1;
+    private ParsedObject obj_out = null;
+    private Reader r = null;
+    private int cur_level = 0;
+    private int node_ctr = 1;
+    private int token_ctr = 0;
+    private StringBuffer cur_path = null;
+    private StringBuffer cur_sequence_path = null;
+    private boolean is0def = false;
+    private Node cur_node_schema;
 
     /**
      * Constructor (no parameters needed to create instance)
@@ -161,7 +171,7 @@ public class MultiLevelCSVParser {
             throws IOException {
         ParsedObject parsedObject = parse(ParsedObject.TARGET_W3C_DOC,
                 new InputSource(is), toValidate);
-        return parsedObject.getDocument();
+        return (parsedObject == null ? null : parsedObject.getDocument());
     }
 
     /**
@@ -178,7 +188,7 @@ public class MultiLevelCSVParser {
             throws IOException {
         ParsedObject parsedObject = parse(ParsedObject.TARGET_JSON_OBJ,
                 new InputSource(is), toValidate);
-        return parsedObject.getJSONObject();
+        return (parsedObject == null ? null : parsedObject.getJSONObject());
     }
 
     /**
@@ -194,7 +204,7 @@ public class MultiLevelCSVParser {
     public Document parseToDOM(Reader r, boolean toValidate) throws IOException {
         ParsedObject parsedObject = parse(ParsedObject.TARGET_W3C_DOC,
                 new InputSource(r), toValidate);
-        return parsedObject.getDocument();
+        return (parsedObject == null ? null : parsedObject.getDocument());
     }
 
     /**
@@ -211,7 +221,7 @@ public class MultiLevelCSVParser {
             throws IOException {
         ParsedObject parsedObject = parse(ParsedObject.TARGET_JSON_OBJ,
                 new InputSource(r), toValidate);
-        return parsedObject.getJSONObject();
+        return (parsedObject == null ? null : parsedObject.getJSONObject());
     }
 
     /**
@@ -225,12 +235,43 @@ public class MultiLevelCSVParser {
      */
     private ParsedObject parse(short targetObject, InputSource is,
             boolean toValidate) throws IOException {
+        initParse(targetObject, is, toValidate);
+        for (ParsedObject parsedObject = parseNext(); 
+                  parsedObject != null; parsedObject = parseNext()) {
+            // Do nothing. initParse() and parseNext() are public.
+            // This code snippet could be used by caller and have some logic
+            // here to have control during parsing and managing memory.
+            // parseNext() returns for each Node successfully constructed.
+            // parsedObject.getCurrentElement() or parsedObject.getCurrentJSO()
+            // can be called to have access to the successfully constructed
+            // node, such as:
+            // if (parser.getEx().getErrorCode() == 0) {
+            //    Element parsedElement = parsedObject.getCurrentElement();
+            //    // Do something with parsedElement here
+            //    // if necessary free memory by deleting attributes
+            // }
+        }
+        return obj_out;
+    }
+
+    /**
+     * Initializes transient variables used during parsing, parses directive and
+     * schema.
+     * 
+     * @param targetObject
+     * @param is
+     * @param toValidate
+     * @return
+     * @throws IOException
+     */
+    public ParsedObject initParse(short targetObject, InputSource is,
+            boolean toValidate) throws IOException {
 
         // Initialize
         ex.reset_exceptions();
         csv_parser.reset();
-        ParsedObject obj_out = new ParsedObject(ex);
-        Reader r = null;
+        obj_out = null;
+        r = null;
 
         // Parse directive
         String orig_encoding = csv_ml_encoding;
@@ -257,38 +298,38 @@ public class MultiLevelCSVParser {
             return obj_out;
 
         // Initialize variables
-        int cur_level = 0;
-        int node_ctr = 1;
-        int token_ctr = 0;
-        StringBuffer cur_path = new StringBuffer();
-        StringBuffer cur_sequence_path = new StringBuffer();
+        cur_level = 0;
+        node_ctr = 1;
+        token_ctr = 0;
+        cur_path = new StringBuffer();
+        cur_sequence_path = new StringBuffer();
         cur_sibling = 1;
-        boolean is0def = false;
+        is0def = false;
+        cur_node_schema = null;
 
-        // Look for namespace in the csv_ml_root directive
-        // (If namespaces need to be defined at the root they
-        // can be enumerated after the root delimited with
-        // space).
-        String namespace = "";
-        String[] ns_uri = new String[0];
-        int e_idx = csv_ml_root.indexOf("/");
-        if (e_idx > 0) {
-            ns_uri = csv_ml_root.substring(e_idx + 1).split(" ");
-            csv_ml_root = csv_ml_root.substring(0, e_idx);
-        }
-        int c_idx = csv_ml_root.indexOf(":");
-        if (c_idx > 0) {
-            namespace = csv_ml_root.substring(0, c_idx);
-            if (ns_uri.length == 0)
-                ns_uri = new String[] { namespace + "='http://siara.cc/ns'" };
-        }
-        // Initialize the target object for W3C DOM
-        if (targetObject == ParsedObject.TARGET_W3C_DOC)
-            obj_out = new ParsedObject(csv_ml_root, ns_uri, ex);
+        obj_out = new ParsedObject(csv_ml_root, csv_ml_encoding, ex,
+                targetObject);
+        int slashIdx = csv_ml_root.indexOf('/'); // Remove namespaces after
+                                                 // slash if present
+        if (slashIdx != -1)
+            csv_ml_root = csv_ml_root.substring(slashIdx + 1);
+        return obj_out;
+
+    }
+
+    /**
+     * Main parsing logic. Returns once an element formation is complete.
+     * 
+     * @param targetObject
+     * @param is
+     * @param toValidate
+     * @return
+     * @throws IOException
+     */
+    public ParsedObject parseNext() throws IOException {
 
         // Main loop that processes each token from the stream
         // till there are no more tokens
-        Node cur_node_schema = null;
         do {
 
             String value = csv_parser.parseNextToken(r);
@@ -341,7 +382,7 @@ public class MultiLevelCSVParser {
                                 .getNodeBySeqPath(cur_sequence_path.toString());
                         if (cur_node_schema == null) {
                             ex.set_err(E_NODE_NOT_FOUND);
-                            return obj_out;
+                            break;
                         }
                         // TODO: Validate whether valid child or not
                         cur_path.replace(0, cur_path.length(),
@@ -355,7 +396,7 @@ public class MultiLevelCSVParser {
                                 .getNodeBySeqPath(cur_sequence_path.toString());
                         if (cur_node_schema == null) {
                             ex.set_err(E_NODE_NOT_FOUND);
-                            return obj_out;
+                            break;
                         }
                         cur_path.replace(0, cur_path.length(),
                                 cur_node_schema.getPath());
@@ -367,7 +408,7 @@ public class MultiLevelCSVParser {
                                 .toString());
                         if (cur_node_schema == null) {
                             ex.set_err(E_NODE_NOT_FOUND);
-                            return obj_out;
+                            break;
                         }
                         cur_sequence_path.replace(0,
                                 cur_sequence_path.length(),
@@ -435,7 +476,7 @@ public class MultiLevelCSVParser {
                 if (space_count > (cur_level + 1)) {
                     // More spaces found than expected, so stop parsing
                     ex.set_err(E_DOWN_2_LEVELS);
-                    return obj_out;
+                    break;
                 } else {
                     // adjust cur_level according to space_count
                     while (cur_level >= space_count) {
@@ -459,10 +500,12 @@ public class MultiLevelCSVParser {
                 }
                 is0def = false;
                 token_ctr = 0;
+                obj_out.finalizeElement();
+                return obj_out;
             }
         } while (!csv_parser.isEOS());
         obj_out.deleteParentRefs();
-        return obj_out;
+        return null;
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2015 arun@siara.cc
+ * Copyright (C) 2015 Siara Logics (cc)
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import java.util.Hashtable;
 
 import cc.siara.csv.CSVParser;
 import cc.siara.csv.ExceptionHandler;
+import cc.siara.csv_ml.MultiLevelCSVParser;
 import cc.siara.csv_ml.Util;
 
 public class MultiLevelCSVSchema {
@@ -62,7 +63,7 @@ public class MultiLevelCSVSchema {
        String zero_def_name = "";
        int nxt_char = csv_parser.readChar(r);
        if (nxt_char==' ' || nxt_char=='\t') {
-          ex.set_err(ExceptionHandler.E_SCH_START_WITH_SPACE);
+          ex.set_err(MultiLevelCSVParser.E_SCH_START_WITH_SPACE);
           return;
        } else
           csv_parser.reInsertLastChar();
@@ -111,7 +112,7 @@ public class MultiLevelCSVSchema {
              node_obj.setPath(cur_path.toString());
              node_obj.setSeqPath(cur_sequence_path.toString());
              if (getNodeByNamePath(cur_path.toString()) != null) {
-                ex.set_err(ExceptionHandler.E_DUPLICATE_NODE);
+                ex.set_err(MultiLevelCSVParser.E_DUPLICATE_NODE);
                 return;
              }
              addNamePathNodeMap(cur_path.toString(), node_obj);
@@ -144,7 +145,7 @@ public class MultiLevelCSVSchema {
                  csv_parser.reInsertLastChar();
              csv_parser.getCounter().setColNo(csv_parser.getCounter().getColNo()+space_count);
              if (space_count > (cur_level+1)) {
-                ex.set_err(ExceptionHandler.E_DOWN_2_LEVELS);
+                ex.set_err(MultiLevelCSVParser.E_DOWN_2_LEVELS);
                 return;
              } else {
                 while (cur_level >= space_count) {

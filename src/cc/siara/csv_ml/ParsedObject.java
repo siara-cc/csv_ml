@@ -22,6 +22,7 @@ import java.util.Hashtable;
 
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
+import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -182,7 +183,10 @@ public class ParsedObject {
             String nsURI = nsMap.get(ns);
             if (nsURI == null)
                 nsURI = generalNSURI;
-            ((Element) cur_element).setAttributeNS(nsURI, col_name, value);
+            Attr attr = doc.createAttributeNS(nsURI, col_name.substring(cIdx+1));
+            attr.setPrefix(ns);
+            attr.setValue(value);
+            ((Element) cur_element).setAttributeNodeNS(attr);
         }
         pendingAttributes = new Hashtable<String, String>();
     }
@@ -238,12 +242,19 @@ public class ParsedObject {
                     ((Element) cur_element).setAttribute(col_name, value);
                 else {
                     String ns = col_name.substring(0, cIdx);
-                    String nsURI = nsMap.get(ns);
-                    if (nsURI == null)
-                        pendingAttributes.put(col_name, value);
-                    else
-                        ((Element) cur_element).setAttributeNS(nsURI, col_name,
-                                value);
+                    if (ns.equals("xmlns")) {
+                        nsMap.put(col_name.substring(cIdx + 1), value);
+                    } else {
+                        String nsURI = nsMap.get(ns);
+                        if (nsURI == null) {
+                            pendingAttributes.put(col_name, value);
+                        } else {
+                            Attr attr = doc.createAttributeNS(nsURI, col_name.substring(cIdx+1));
+                            attr.setPrefix(ns);
+                            attr.setValue(value);
+                            ((Element) cur_element).setAttributeNodeNS(attr);
+                        }
+                    }
                 }
             }
         } else

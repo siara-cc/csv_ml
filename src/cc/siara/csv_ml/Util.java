@@ -49,7 +49,9 @@ public class Util {
     public static Document parseXMLToDOM(String xml_str) {
         Document doc = null;
         try {
-            doc = DocumentBuilderFactory.newInstance().newDocumentBuilder()
+            DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+            factory.setNamespaceAware(true);
+            doc = factory.newDocumentBuilder()
                     .parse(new InputSource(new StringReader(xml_str)));
         } catch (Exception e) {
             e.printStackTrace();
@@ -71,6 +73,7 @@ public class Util {
             Transformer transformer = TransformerFactory.newInstance()
                     .newTransformer();
             if (isPretty) {
+                transformer.setOutputProperty(OutputKeys.OMIT_XML_DECLARATION, "yes");
                 transformer.setOutputProperty(OutputKeys.INDENT, "yes");
                 transformer.setOutputProperty(
                         "{http://xml.apache.org/xslt}indent-amount", "2");

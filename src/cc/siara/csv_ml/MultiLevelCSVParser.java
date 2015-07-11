@@ -431,7 +431,7 @@ public class MultiLevelCSVParser {
                 int arr_len = column_arr.size();
                 if (!csv_ml_schema.equals("no_schema") && token_ctr > arr_len) {
                     // If no more attributes in schema, add as Node Content
-                    value = CSVParser.encodeToCSVText(value);
+                    value = Outputter.encodeToCSVText(value);
                     obj_out.addContent(value);
                 } else {
                     String col_name = "";
@@ -459,6 +459,7 @@ public class MultiLevelCSVParser {
                     obj_out.setAttribute(col_name, "");
                     token_ctr++;
                 }
+                obj_out.finalizeElement();
 
                 // Count number of spaces at the beginning of next line
                 int space_count = 0;
@@ -500,7 +501,6 @@ public class MultiLevelCSVParser {
                 }
                 is0def = false;
                 token_ctr = 0;
-                obj_out.finalizeElement();
                 return obj_out;
             }
         } while (!csv_parser.isEOS());

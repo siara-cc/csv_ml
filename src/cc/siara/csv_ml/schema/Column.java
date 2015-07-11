@@ -280,7 +280,7 @@ public class Column {
             setName(col_name.toString());
         } else {
             setNs(col_name.substring(0, c_idx));
-            setName(col_name.substring(c_idx + 1));
+            setName(col_name.toString());
         }
         setAlias(col_alias.toString());
         setLen(col_len.toString());

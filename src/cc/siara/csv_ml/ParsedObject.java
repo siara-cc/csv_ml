@@ -25,7 +25,9 @@ import org.json.simple.JSONObject;
 import org.w3c.dom.Attr;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 import cc.siara.csv.ExceptionHandler;
 
@@ -45,6 +47,7 @@ public class ParsedObject {
     Document doc = null;
     Node cur_element = null;
     Element last_element = null;
+    String currentElementNS = "";
 
     JSONObject jo = null;
     JSONObject cur_jo = null;
@@ -123,6 +126,7 @@ public class ParsedObject {
             doc = Util.parseXMLToDOM(xml_str.toString());
             last_element = doc.getDocumentElement();
             cur_element = last_element;
+            this.csv_ml_root = csv_ml_root;
             // TODO: How to set document encoding? Is it automatic?
 
         }
@@ -159,6 +163,12 @@ public class ParsedObject {
             // do not add new. Otherwise add new Element
             if (!cur_element.equals(doc.getDocumentElement())
                     || !node_name.equals(csv_ml_root)) {
+                int cIdx = node_name.indexOf(':');
+                if (cIdx != -1) {
+                    currentElementNS = node_name.substring(0, cIdx);
+                    node_name = node_name.substring(cIdx + 1);
+                } else
+                    currentElementNS = "";
                 new_node = doc.createElement(node_name);
                 cur_element.appendChild(new_node);
             }
@@ -172,10 +182,12 @@ public class ParsedObject {
     /**
      * Performas any pending activity against an element to finalize it. In this
      * case, it adds any pending attributes needing namespace mapping.
+     * 
+     * Also if the node has a namespace attached, it recreates the node with
+     * specific URI.
      */
     public void finalizeElement() {
-        if (pendingAttributes.size() == 0)
-            return;
+        // Add all remaining attributes
         for (String col_name : pendingAttributes.keySet()) {
             String value = pendingAttributes.get(col_name);
             int cIdx = col_name.indexOf(':');
@@ -183,10 +195,39 @@ public class ParsedObject {
             String nsURI = nsMap.get(ns);
             if (nsURI == null)
                 nsURI = generalNSURI;
-            Attr attr = doc.createAttributeNS(nsURI, col_name.substring(cIdx+1));
+            Attr attr = doc.createAttributeNS(nsURI,
+                    col_name.substring(cIdx + 1));
             attr.setPrefix(ns);
             attr.setValue(value);
             ((Element) cur_element).setAttributeNodeNS(attr);
+        }
+        // If the element had a namespace prefix, it has to be recreated.
+        if (!currentElementNS.equals("")
+                && !doc.getDocumentElement().equals(cur_element)) {
+            Node parent = cur_element.getParentNode();
+            Element cur_ele = (Element) parent.removeChild(cur_element);
+            String node_name = cur_ele.getNodeName();
+            String nsURI = nsMap.get(currentElementNS);
+            if (nsURI == null)
+                nsURI = generalNSURI;
+            Element new_node = doc.createElementNS(nsURI, currentElementNS+":"+node_name);
+            parent.appendChild(new_node);
+            // Add all attributes
+            NamedNodeMap attrs = cur_ele.getAttributes();
+            while (attrs.getLength() > 0) {
+                Attr attr = (Attr) attrs.item(0);
+                cur_ele.removeAttributeNode(attr);
+                nsURI = attr.getNamespaceURI();
+                new_node.setAttributeNodeNS(attr);
+            }
+            // Add all CData sections
+            NodeList childNodes = cur_ele.getChildNodes();
+            for (int i = 0; i < childNodes.getLength(); i++) {
+                Node node = childNodes.item(i);
+                if (node.getNodeType() == Node.CDATA_SECTION_NODE)
+                    new_node.appendChild(node);
+            }
+            cur_element = new_node;
         }
         pendingAttributes = new Hashtable<String, String>();
     }
@@ -249,7 +290,8 @@ public class ParsedObject {
                         if (nsURI == null) {
                             pendingAttributes.put(col_name, value);
                         } else {
-                            Attr attr = doc.createAttributeNS(nsURI, col_name.substring(cIdx+1));
+                            Attr attr = doc.createAttributeNS(nsURI,
+                                    col_name.substring(cIdx + 1));
                             attr.setPrefix(ns);
                             attr.setValue(value);
                             ((Element) cur_element).setAttributeNodeNS(attr);

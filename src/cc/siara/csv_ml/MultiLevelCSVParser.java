@@ -236,8 +236,7 @@ public class MultiLevelCSVParser {
     private ParsedObject parse(short targetObject, InputSource is,
             boolean toValidate) throws IOException {
         initParse(targetObject, is, toValidate);
-        for (ParsedObject parsedObject = parseNext(); 
-                  parsedObject != null; parsedObject = parseNext()) {
+        for (ParsedObject parsedObject = parseNext(); parsedObject != null; parsedObject = parseNext()) {
             // Do nothing. initParse() and parseNext() are public.
             // This code snippet could be used by caller and have some logic
             // here to have control during parsing and managing memory.
@@ -246,9 +245,9 @@ public class MultiLevelCSVParser {
             // can be called to have access to the successfully constructed
             // node, such as:
             // if (parser.getEx().getErrorCode() == 0) {
-            //    Element parsedElement = parsedObject.getCurrentElement();
-            //    // Do something with parsedElement here
-            //    // if necessary free memory by deleting attributes
+            // Element parsedElement = parsedObject.getCurrentElement();
+            // // Do something with parsedElement here
+            // // if necessary free memory by deleting attributes
             // }
         }
         return obj_out;
@@ -312,7 +311,7 @@ public class MultiLevelCSVParser {
         int slashIdx = csv_ml_root.indexOf('/'); // Remove namespaces after
                                                  // slash if present
         if (slashIdx != -1)
-            csv_ml_root = csv_ml_root.substring(slashIdx + 1);
+            csv_ml_root = csv_ml_root.substring(0, slashIdx);
         return obj_out;
 
     }
@@ -470,9 +469,10 @@ public class MultiLevelCSVParser {
                 }
                 if (nxt_char == -1) // end of stream
                     break;
-                else
+                else {
                     // If space not found put back the character
                     csv_parser.reInsertLastChar();
+                }
                 counter.setColNo(counter.getColNo() + space_count);
                 if (space_count > (cur_level + 1)) {
                     // More spaces found than expected, so stop parsing

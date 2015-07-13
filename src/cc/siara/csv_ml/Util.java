@@ -173,4 +173,24 @@ public class Util {
         cur_path.append(node_name);
     }
 
+    /**
+     * Checks whether encoding is necessary and encodes by enclosing in double
+     * quotes, in which case, any double quotes appearing in data need to be
+     * escaped.
+     * 
+     * @param value
+     * @return
+     */
+    public static String encodeToCSVText(String value) {
+        if (value == null)
+            return value;
+        if (value.indexOf(',') != -1 || value.indexOf('\n') != -1
+                || value.indexOf("/*") != -1) {
+            if (value.indexOf('"') != -1)
+                value = value.replace("\"", "\"\"");
+            value = ("\"" + value + "\"");
+        }
+        return value;
+    }
+
 }

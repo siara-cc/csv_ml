@@ -55,26 +55,6 @@ public class Outputter {
     }
 
     /**
-     * Checks whether encoding is necessary and encodes by enclosing in double
-     * quotes, in which case, any double quotes appearing in data need to be
-     * escaped.
-     * 
-     * @param value
-     * @return
-     */
-    public static String encodeToCSVText(String value) {
-        if (value == null)
-            return value;
-        if (value.indexOf(',') != -1 || value.indexOf('\n') != -1
-                || value.indexOf("/*") != -1) {
-            if (value.indexOf('"') != -1)
-                value = value.replace("\"", "\"\"");
-            value = ("\"" + value + "\"");
-        }
-        return value;
-    }
-
-    /**
      * Builds the csv_ml string starting at the root node
      * 
      * @param ele
@@ -106,8 +86,9 @@ public class Outputter {
             for (int j = 0; j < attributes.getLength(); j++) {
                 if (!is_schema_updated)
                     schema.append(",").append(attributes.item(j).getNodeName());
-                data.append(",").append(
-                        encodeToCSVText(attributes.item(j).getNodeValue()));
+                data.append(",")
+                        .append(Util.encodeToCSVText(attributes.item(j)
+                                .getNodeValue()));
             }
 
             // TODO: Is text content to be exported?
@@ -122,7 +103,7 @@ public class Outputter {
                     continue;
                 CDATASection cdata_section = (CDATASection) childNodes.item(i);
                 data.append(",").append(
-                        encodeToCSVText(cdata_section.getData()));
+                        Util.encodeToCSVText(cdata_section.getData()));
             }
             if (!is_schema_updated)
                 schema.append("\n");

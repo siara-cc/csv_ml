@@ -18,6 +18,10 @@
  */
 package cc.siara.csv_ml;
 
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.Hashtable;
 import java.util.List;
 
@@ -55,6 +59,7 @@ public class DBBind {
      */
     public static void generateDDL(MultiLevelCSVSchema schema,
             StringBuffer out_str) {
+
         boolean is_first = true;
         boolean is_id_present = false;
         boolean is_parent_id_present = false;
@@ -105,6 +110,7 @@ public class DBBind {
             out_str.append(");\r\n\r\n");
             is_first = true;
         }
+
     }
 
     /**
@@ -129,7 +135,9 @@ public class DBBind {
      * @param out_str
      *            The StringBuffer to which DML statements to be appended.
      */
-    public static void generate_dml_recursively(MultiLevelCSVSchema schema, Element ele, String path, StringBuffer out_str) {
+    public static void generate_dml_recursively(MultiLevelCSVSchema schema,
+            Element ele, String path, StringBuffer out_str) {
+
         // No DML generation for root element
         // Otherwise, this section generates INSERT/UPDATE/DELETE
         // for the current node
@@ -228,6 +236,214 @@ public class DBBind {
             generate_dml_recursively(schema, (Element) childNodes.item(i),
                     cur_path.toString(), out_str);
         }
+
+    }
+
+    /**
+     * Generates SQL (SELECT statements) recursively, executes them against the
+     * given Connection object and returns a csv_ml string in out_str.
+     * 
+     * @param schema
+     *            A schema object
+     * @param seq_path
+     *            Should be "" intially. Used internally
+     * @param prefix
+     *            Should be "" intially. Used internally
+     * @param out_str
+     *            The StringBuffer to which csv_ml to be appended.
+     * @param jdbcCon
+     *            JDBC Connection instance to be used
+     * @param id
+     *            id value for the first level. This is an array because there
+     *            could be more than one node in the first level.
+     */
+    public static void generateSQLRecursively(MultiLevelCSVSchema schema,
+            String seq_path, String prefix, StringBuffer out_str,
+            Connection jdbcCon, String[] id) {
+
+        if (seq_path.length() == 0)
+            seq_path = "1"; // Start with "1"
+        else
+            seq_path = seq_path.concat(".1"); // Check next level
+        Node node = schema.getNodeBySeqPath(seq_path);
+        if (node == null)
+            return;
+
+        while (node != null) {
+
+            List<Column> columns_obj = node.getColumns();
+            String node_name = node.getName();
+
+            // Generate SQL Statement
+            StringBuffer sql = new StringBuffer("SELECT ");
+            boolean is_first = true;
+            for (Column col_obj : columns_obj) {
+                String col_name = col_obj.getName();
+                if (is_first)
+                    is_first = false;
+                else
+                    out_str.append(", ");
+                out_str.append(col_name);
+            }
+            if (seq_path.indexOf('.') == -1)
+                sql.append(", parent_id");
+            sql.append(", id FROM ");
+            sql.append(node_name);
+            if (seq_path.indexOf('.') == -1) {
+                sql.append(" WHERE id='");
+                sql.append(id[Integer.parseInt(seq_path)-1]);
+            } else {
+                sql.append(" WHERE parent_id='");
+                sql.append(id[0]);
+            }
+            sql.append("'");
+
+            // Run the SQL and generate record
+            Statement stmt = null;
+            ResultSet rs = null;
+            try {
+                stmt = jdbcCon.createStatement();
+                rs = stmt.executeQuery(sql.toString());
+                out_str.append(prefix);
+                out_str.append(node_name);
+                while (rs.next()) {
+                    for (Column col : node.getColumns()) {
+                        String col_alias = col.getAlias();
+                        if (col_alias == null)
+                            col_alias = col.getName();
+                        out_str.append(',');
+                        out_str.append(Util.encodeToCSVText(rs
+                                .getString(col_alias)));
+                    }
+                    out_str.append("\n");
+                    // Recursively generate data for children
+                    generateSQLRecursively(schema, seq_path,
+                            prefix.concat(" "), out_str, jdbcCon,
+                            new String[] { rs.getString("id") });
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            } finally {
+                try {
+                    if (rs != null)
+                        rs.close();
+                    if (stmt != null)
+                        stmt.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        // Repeat for a sibling
+        int seqIdx = seq_path.lastIndexOf('.');
+        if (seqIdx == -1)
+            seq_path = String.valueOf(Integer.parseInt(seq_path) + 1);
+        else {
+            seq_path = seq_path.substring(0, seqIdx).concat(
+                    String.valueOf(Integer.parseInt(seq_path
+                            .substring(seqIdx + 1) + 1)));
+        }
+        node = schema.getNodeBySeqPath(seq_path);
+
+    }
+
+    /**
+     * Generates SQL (SELECT statements), executes them against the given
+     * Connection object and returns a csv_ml string in out_str.
+     * 
+     * @param schema
+     *            A schema object
+     * @param seq_path
+     *            Should be "" intially. Used internally
+     * @param prefix
+     *            Should be "" intially. Used internally
+     * @param out_str
+     *            The StringBuffer to which csv_ml to be appended.
+     * @param jdbcCon
+     *            JDBC Connection instance to be used
+     * @param id
+     *            id value for the first level. This is an array because there
+     *            could be more than one node in the first level.
+     */
+    public static void generateSQL(MultiLevelCSVSchema schema,
+            StringBuffer out_str, Connection jdbcCon, String[] id) {
+        out_str.append("csv_ml,1.0\n");
+        schema.outputSchemaRecursively(out_str, "", "", true);
+        generateSQLRecursively(schema, "", "", out_str, jdbcCon, id);
+    }
+
+    /**
+     * Runs DDL/DML statements separated by ; character
+     * 
+     * @param statements
+     *            String containing statements separated by ;
+     * @param jdbcCon
+     *            Connection instance to use
+     * @return String containing the statements executed and corresponding
+     *         results.
+     */
+    public static String runStatements(String statements, Connection jdbcCon) {
+        StringBuffer out_str = new StringBuffer();
+        StringBuffer stmt_str = new StringBuffer();
+        Statement stmt = null;
+        try {
+            stmt = jdbcCon.createStatement();
+            int stmt_pos = 0;
+            do {
+
+                // extract single statement
+                boolean is_stmt_started = false;
+                boolean is_within_quote = false;
+                for (; stmt_pos < statements.length(); stmt_pos++) {
+                    char c = statements.charAt(stmt_pos);
+                    if (Character.isWhitespace(c) && !is_stmt_started)
+                        continue;
+                    is_stmt_started = true;
+                    if (c == ';' && !is_within_quote) {
+                        stmt_pos++;
+                        break;
+                    }
+                    stmt_str.append(c);
+                    if (c == '\'') {
+                        if (is_within_quote) {
+                            if (stmt_pos + 1 < statements.length()
+                                    && statements.charAt(stmt_pos + 1) == '\'') {
+                                stmt_pos++;
+                            } else
+                                is_within_quote = false;
+                        } else
+                            is_within_quote = true;
+                    }
+                }
+                if (stmt_str.length() == 0)
+                    continue;
+                // Execute and append the result
+                out_str.append(stmt_str).append("\n");
+                try {
+                    int result = stmt.executeUpdate(stmt_str.toString());
+                    out_str.append("Success: ").append(result)
+                            .append(" records affected.\n\n");
+                } catch (SQLException e) {
+                    out_str.append("Error:").append(e.getMessage())
+                            .append("\n\n");
+                }
+                stmt_str.setLength(0);
+            } while (stmt_pos < statements.length());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return "";
+        } finally {
+            try {
+                if (stmt != null)
+                    stmt.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+        return out_str.toString();
+
     }
 
 }

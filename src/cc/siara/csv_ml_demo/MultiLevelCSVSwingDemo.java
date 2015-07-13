@@ -24,6 +24,9 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
 import java.io.StringReader;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
@@ -64,7 +67,15 @@ import cc.siara.csv_ml.Util;
 public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         Runnable {
 
+    static {
+        try {
+            Class.forName("org.sqlite.JDBC");
+        } catch (ClassNotFoundException e) {
+            e.printStackTrace();
+        }
+    }
     private static final long serialVersionUID = 5786609711433744144L;
+    MultiLevelCSVParser parser = new MultiLevelCSVParser();
 
     /**
      * Constructor that adds components to the container, sets layout and opens
@@ -99,6 +110,13 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         container.add(lblOutputSize);
         container.add(tfOutputSize);
         container.add(btnToCSV);
+        container.add(lblJDBCURL);
+        container.add(tfDBURL);
+        container.add(btnRunDDL);
+        container.add(lblID);
+        container.add(tfID);
+        container.add(btnGetData);
+        JTextField tfID = new JTextField("1", 4);
         taInput.setBorder(BorderFactory.createLineBorder(getForeground()));
         taOutput.setBorder(BorderFactory.createLineBorder(getForeground()));
         setInputText();
@@ -108,6 +126,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         btnJSON.addActionListener(this);
         btnToCSV.addActionListener(this);
         btnXPath.addActionListener(this);
+        btnRunDDL.addActionListener(this);
+        btnGetData.addActionListener(this);
         tfInputSize.setEditable(false);
         tfOutputSize.setEditable(false);
         setVisible(true);
@@ -144,9 +164,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
      * @return W3C Document object
      */
     private Document parseInputToDOM() {
-        MultiLevelCSVParser parser = new MultiLevelCSVParser();
         Document doc = null;
         try {
+            parser = new MultiLevelCSVParser();
             doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
@@ -166,9 +186,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
      * output text box
      */
     private void toDDLDML() {
-        MultiLevelCSVParser parser = new MultiLevelCSVParser();
         Document doc = null;
         try {
+            parser = new MultiLevelCSVParser();
             doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
@@ -277,8 +297,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
      * Parses csv_ml from input box to JSON object and sets to output text box
      */
     void toJSON() {
-        MultiLevelCSVParser parser = new MultiLevelCSVParser();
+
         try {
+            parser = new MultiLevelCSVParser();
             JSONObject jo = parser.parseToJSO(
                     new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
@@ -305,6 +326,71 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             JOptionPane.showMessageDialog(null, e.getMessage());
             e.printStackTrace();
         }
+
+    }
+
+    /**
+     * Runs each statement in the Output textbox
+     */
+    void runDDL() {
+        Connection con = null;
+        try {
+            con = DriverManager.getConnection(tfDBURL.getText());
+            String out_str = DBBind.runStatements(taOutput.getText(), con);
+            taOutput.setText(out_str);
+            tfOutputSize.setText(String.valueOf(out_str.length()));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "SQL Exception" + e.getMessage());
+            return;
+        } finally {
+            try {
+                if (con != null)
+                    con.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Runs each statement in the Output textbox
+     */
+    void runSQL() {
+
+        if (parser.getSchema().getSeqPathNodeMap().size() == 0) {
+            JOptionPane.showMessageDialog(null,
+                    "No schema. First parse a valid csv_ml");
+            return;
+        }
+        Connection con = null;
+        try {
+            con = DriverManager.getConnection(tfDBURL.getText());
+            StringBuffer out_str = new StringBuffer();
+            String id = tfID.getText();
+            String[] arr_id = null;
+            if (id.indexOf(',') == -1)
+                arr_id = new String[] {id};
+            else
+                arr_id = id.split(",");
+            DBBind.generateSQL(parser.getSchema(), out_str, con, arr_id);
+            taOutput.setText(out_str.toString());
+            tfOutputSize.setText(String.valueOf(out_str.length()));
+        } catch (SQLException e) {
+            e.printStackTrace();
+            JOptionPane.showMessageDialog(null,
+                    "SQL Exception" + e.getMessage());
+            return;
+        } finally {
+            try {
+                if (con != null)
+                    con.close();
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     /*
@@ -326,6 +412,10 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             toDDLDML();
         if (e.getSource().equals(btnToCSV))
             xmlToCSV();
+        if (e.getSource().equals(btnRunDDL))
+            runDDL();
+        if (e.getSource().equals(btnGetData))
+            runSQL();
     }
 
     // List of example titles (of csv_ml) corresponding to documentation
@@ -393,13 +483,13 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "/data/student/@name", "/student/@name", "/root", "/root",
             "/root/our:student[his:name='b']",
             "/root/our:student[his:name='b']", "/xsl:stylesheet",
-            "/xsl:stylesheet", "","","","","","","","","","" };
+            "/xsl:stylesheet", "", "", "", "", "", "", "", "", "", "" };
 
     // Components
     JLabel lblInput = new JLabel("Input (csv):");
     JComboBox<String> cbExamples = new JComboBox<String>(aExamples);
     JLabel lblInputSize = new JLabel("Input size:");
-    JTextField tfInputSize = new JTextField("0", 4);
+    JTextField tfInputSize = new JTextField("0", 3);
     JTextArea taInput = new JTextArea(15, 70);
     JScrollPane taInputScroll = new JScrollPane(taInput);
     JLabel lblOutput = new JLabel("Output (csv):");
@@ -411,9 +501,15 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     JCheckBox cbPretty = new JCheckBox("Pretty?", true);
     JTextArea taOutput = new JTextArea(15, 70);
     JScrollPane taOutputScroll = new JScrollPane(taOutput);
-    JButton btnToCSV = new JButton("XML to CSV");
+    JButton btnToCSV = new JButton("XML->CSV");
     JLabel lblOutputSize = new JLabel("Output size:");
-    JTextField tfOutputSize = new JTextField("0", 4);
+    JTextField tfOutputSize = new JTextField("0", 3);
+    JLabel lblJDBCURL = new JLabel("  DB URL:");
+    JTextField tfDBURL = new JTextField("jdbc:sqlite:test.db", 13);
+    JButton btnRunDDL = new JButton("Run DDL/DML");
+    JLabel lblID = new JLabel("id:");
+    JTextField tfID = new JTextField("1", 4);
+    JButton btnGetData = new JButton("Retrieve");
 
     /**
      * Main method to invoke the application
@@ -424,11 +520,11 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         SwingUtilities.invokeLater(new MultiLevelCSVSwingDemo(null));
     }
 
-    /* 
-     * Thread that initiates the Swing application
-     * No code is required here
+    /*
+     * Thread that initiates the Swing application No code is required here
      * 
      * (non-Javadoc)
+     * 
      * @see java.lang.Runnable#run()
      */
     public void run() {

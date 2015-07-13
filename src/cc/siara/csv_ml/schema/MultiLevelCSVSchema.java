@@ -101,6 +101,89 @@ public class MultiLevelCSVSchema {
     }
 
     /**
+     * Outputs the schema as a string
+     * 
+     * @param schemaString
+     *            Should be an empty StringBuffer. Output is stored into this.
+     * @param seq_path
+     *            Should be "" intially. Used internally
+     * @param prefix
+     *            Should be "" intially. Used internally
+     * @return corresponding node
+     */
+    public void outputSchemaRecursively(StringBuffer schemaString,
+            String seq_path, String prefix, boolean includeId) {
+
+        if (seq_path.length() == 0)
+            seq_path = "1"; // Start with "1"
+        else
+            seq_path = seq_path.concat(".1"); // Check next level
+        Node node = seq_path_node_map.get(seq_path);
+        if (node == null)
+            return;
+
+        while (node != null) {
+
+            schemaString.append(prefix);
+            schemaString.append(node.getName());
+            for (Column col : node.getColumns()) {
+                schemaString.append(',');
+                int colStartPos = schemaString.length();
+                schemaString.append(col.getName());
+                // Append Column alias if any
+                String col_alias = col.getAlias();
+                if (col_alias != null && !col_alias.equals(""))
+                    schemaString.append("/").append(col_alias);
+                // Append Column precision if any
+                String col_len = col.getLen();
+                if (col_len != null && !col_len.equals(""))
+                    schemaString.append("(").append(col_len).append(")");
+                // Append Column Type if any
+                String col_type = col.getType();
+                if (col_type != null && !col_type.equals("")
+                        && !col_type.equals("text"))
+                    schemaString.append(col_type);
+                // Append Column Default if any
+                String col_default = col.getColDefault();
+                if (col_default != null)
+                    schemaString.append('=').append(col_default);
+                // Append Column values possible if any
+                int valStartPos = schemaString.length();
+                for (String value : col.getValues()) {
+                    schemaString.append(',');
+                    schemaString.append(value);
+                }
+                if (valStartPos < schemaString.length()) {
+                    schemaString.setCharAt(valStartPos, '{');
+                    schemaString.append('}');
+                }
+                if (schemaString.indexOf(",", colStartPos) != -1) {
+                    schemaString.insert(colStartPos, '"');
+                    schemaString.append('"');
+                }
+            }
+            if (includeId) {
+                if (seq_path.indexOf('.') != -1)
+                    schemaString.append(",parent_id");
+                schemaString.append(",id");
+            }
+            schemaString.append("\n");
+            outputSchemaRecursively(schemaString, seq_path, prefix.concat(" "), includeId);
+            int seqIdx = seq_path.lastIndexOf('.');
+            if (seqIdx == -1)
+                seq_path = String.valueOf(Integer.parseInt(seq_path) + 1);
+            else {
+                seq_path = seq_path.substring(0, seqIdx).concat(
+                        String.valueOf(Integer.parseInt(seq_path
+                                .substring(seqIdx + 1) + 1)));
+            }
+            node = seq_path_node_map.get(seq_path);
+        }
+        schemaString.append("end_schema\n");
+
+    }
+
+    /**
      * Parse the schema from the given java.io.Reader (r) and build the members
      * of this object.
      * 
@@ -230,7 +313,8 @@ public class MultiLevelCSVSchema {
                 }
                 if (nxt_char == -1) // end of file
                     return;
-                else // Not a space or tab. Put it back.
+                else
+                    // Not a space or tab. Put it back.
                     csv_parser.reInsertLastChar();
                 csv_parser.getCounter().setColNo(
                         csv_parser.getCounter().getColNo() + space_count);

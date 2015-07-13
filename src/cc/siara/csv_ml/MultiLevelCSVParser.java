@@ -430,7 +430,7 @@ public class MultiLevelCSVParser {
                 int arr_len = column_arr.size();
                 if (!csv_ml_schema.equals("no_schema") && token_ctr > arr_len) {
                     // If no more attributes in schema, add as Node Content
-                    value = Outputter.encodeToCSVText(value);
+                    value = Util.encodeToCSVText(value);
                     obj_out.addContent(value);
                 } else {
                     String col_name = "";

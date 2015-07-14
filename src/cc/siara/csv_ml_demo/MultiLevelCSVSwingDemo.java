@@ -166,7 +166,6 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     private Document parseInputToDOM() {
         Document doc = null;
         try {
-            parser = new MultiLevelCSVParser();
             doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
@@ -188,7 +187,6 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     private void toDDLDML() {
         Document doc = null;
         try {
-            parser = new MultiLevelCSVParser();
             doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
@@ -299,7 +297,6 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     void toJSON() {
 
         try {
-            parser = new MultiLevelCSVParser();
             JSONObject jo = parser.parseToJSO(
                     new StringReader(taInput.getText()), false);
             String ex_str = parser.getEx().get_all_exceptions();
@@ -448,7 +445,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "csv_ml,1.0\nstudent,name,subject,marks\n1,abc,physics,53\n1,abc,chemistry,65\n1,xyz,physics,73\n1,xyz,chemistry,76",
             "csv_ml,1.0\nstudent,name,subject,marks\nfaculty,name,subject\n1,abc,physics,53\n1,abc,chemistry,65\n1,xyz,physics,73\n1,xyz,chemistry,76\n2,pqr,physics\n2,bcd,chemistry",
             "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n  subject,name,marks\n1,abc,24\n 1,bs,2010\n  1,physics,53\n  1,chemistry,65\n 1,ms,2012\n  1,physics,74\n  1,chemistry,75\n1,xyz,24\n 1,bs,2010\n  1,physics,67\n  1,chemistry,85",
-            "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n  subject,name,marks\n references,name,company,designation\n1,abc,24\n 1,bs,2010\n  1,physics,53\n  1,chemistry,65\n 1,ms,2012\n  1,physics,74\n  1,chemistry,75\n 2,pqr,bbb,executive\n 2,mno,bbb,director\n1,xyz,24\n 1,bs,2010\n  1,physics,67\n  1,chemistry,85",
+            "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n  subject,name,marks\n reference,name,company,designation\n1,abc,24\n 1,bs,2010\n  1,physics,53\n  1,chemistry,65\n 1,ms,2012\n  1,physics,74\n  1,chemistry,75\n 2,pqr,bbb,executive\n 2,mno,bbb,director\n1,xyz,24\n 1,bs,2010\n  1,physics,67\n  1,chemistry,85",
             "csv_ml,1.0\nstudent,name,age\n1,a\n1,b,23,His record is remarkable\n1,c,24,His record is remarkable,His performance is exemplary",
             "csv_ml,1.0\nstudent\n name\n age\n1\n 1,a\n 2,23",
             "csv_ml,1.0\nsample,text\n1,No quote\n1, No quote with preceding space\n1,With quote (\")\n1,\"With quotes, and \"\"comma\"\"\"\n1, \"With quotes, (space ignored)\"\n1, \"\"\"Enclosed, with double quote\"\"\"\n1, \"\"\"Single, preceding double quote\"\n1, \"Double quote, suffix\"\"\"\n1, \"Double quote, (\"\") in the middle\"\n1, \"More\n\nthan\n\none\n\nline\"",
@@ -468,7 +465,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "csv_ml,1.0\nstudent,name(40)text,subject(30)text,\"marks(6,2)numeric\"\n1,abc,physics,53.34\n1,xyz,physics,73.5",
             "csv_ml,1.0\nstudent,name,subject,marks,birth_date()date,join_date_time()datetime\n1,abc,physics,53.34,1982-01-23,2014-02-22 09:30:00\n1,xyz,physics,73.5,1985-11-12,2014-02-24 15:45:30",
             "csv_ml,1.0\nstudent,id,name,subject,marks\n1,,abc,physics,53\n1,,abc,chemistry,54\n1,3,xyz,physics,73\n1,*4,xyz,physics,73",
-            "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n references,name,company,designation\n1,abc,24\n 1,bs,2010\n 1,ms,2012\n 2,pqr,bbb,executive\n 2,mno,bbb,director's secretary" };
+            "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n reference,name,company,designation\n1,abc,24\n 1,bs,2010\n 1,ms,2012\n 2,pqr,bbb,executive\n 2,mno,bbb,director's secretary" };
 
     String[] aExampleXPath = new String[] {
             "concat('Total of xyz:', sum(root/n1[@c1='xyz']/@c3))",

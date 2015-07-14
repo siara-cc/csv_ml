@@ -57,7 +57,7 @@ public class MultiLevelCSVParser {
     String csv_ml_schema_file = ""; // path to schema file
 
     // Associated classes
-    MultiLevelCSVSchema schema = new MultiLevelCSVSchema();
+    MultiLevelCSVSchema schema = null;
     Counter counter = new Counter();
     ExceptionHandler ex = new ExceptionHandler(counter);
     CSVParser csv_parser = new CSVParser(counter, ex);
@@ -164,7 +164,7 @@ public class MultiLevelCSVParser {
      *            The InputStream to parse
      * @param toValidate
      *            Whether to validate against the schema or not
-     * @return
+     * @return Document object
      * @throws IOException
      */
     public Document parseToDOM(InputStream is, boolean toValidate)
@@ -181,7 +181,7 @@ public class MultiLevelCSVParser {
      *            The InputStream to parse
      * @param toValidate
      *            Whether to validate against the schema or not
-     * @return
+     * @return JSONObject of root
      * @throws IOException
      */
     public JSONObject parseToJSO(InputStream is, boolean toValidate)
@@ -198,7 +198,7 @@ public class MultiLevelCSVParser {
      *            The Reader to parse
      * @param toValidate
      *            Whether to validate against the schema or not
-     * @return
+     * @return Document object
      * @throws IOException
      */
     public Document parseToDOM(Reader r, boolean toValidate) throws IOException {
@@ -214,7 +214,7 @@ public class MultiLevelCSVParser {
      *            The Reader to parse
      * @param toValidate
      *            Whether to validate against the schema or not
-     * @return
+     * @return JSONObject of root
      * @throws IOException
      */
     public JSONObject parseToJSO(Reader r, boolean toValidate)
@@ -235,22 +235,27 @@ public class MultiLevelCSVParser {
      */
     private ParsedObject parse(short targetObject, InputSource is,
             boolean toValidate) throws IOException {
+
         initParse(targetObject, is, toValidate);
         for (ParsedObject parsedObject = parseNext(); parsedObject != null; parsedObject = parseNext()) {
             // Do nothing. initParse() and parseNext() are public.
             // This code snippet could be used by caller and have some logic
             // here to have control during parsing and managing memory.
+            //
             // parseNext() returns for each Node successfully constructed.
             // parsedObject.getCurrentElement() or parsedObject.getCurrentJSO()
             // can be called to have access to the successfully constructed
             // node, such as:
+            //
             // if (parser.getEx().getErrorCode() == 0) {
             // Element parsedElement = parsedObject.getCurrentElement();
             // // Do something with parsedElement here
             // // if necessary free memory by deleting attributes
+            // // // or even remove parseElement itself from the document object after use
             // }
         }
         return obj_out;
+
     }
 
     /**
@@ -258,19 +263,28 @@ public class MultiLevelCSVParser {
      * schema.
      * 
      * @param targetObject
+     *            Whether DOM or JSO
      * @param is
+     *            InputSource to read from
      * @param toValidate
-     * @return
+     *            Whether to Validate or not
      * @throws IOException
      */
-    public ParsedObject initParse(short targetObject, InputSource is,
-            boolean toValidate) throws IOException {
+    public void initParse(short targetObject, InputSource is, boolean toValidate)
+            throws IOException {
 
         // Initialize
         ex.reset_exceptions();
         csv_parser.reset();
         obj_out = null;
         r = null;
+        csv_ml_ver = "1.0";
+        csv_ml_encoding = "UTF-8";
+        csv_ml_root = "root";
+        csv_ml_node_name = "no_node_name";
+        csv_ml_schema = "no_schema";
+        csv_ml_schema_file = "";
+        schema = new MultiLevelCSVSchema();
 
         // Parse directive
         String orig_encoding = csv_ml_encoding;
@@ -280,7 +294,7 @@ public class MultiLevelCSVParser {
             r = is.getReader();
         parseDirective(r);
         if (ex.getErrorCode() != 0)
-            return obj_out;
+            return;
         // If the encoding changed for a
         // byte input stream, reinitialize with
         // different encoding
@@ -294,7 +308,7 @@ public class MultiLevelCSVParser {
             schema.parseSchema(csv_parser, csv_ml_node_name, csv_ml_schema, ex,
                     r);
         if (ex.getErrorCode() != 0)
-            return obj_out;
+            return;
 
         // Initialize variables
         cur_level = 0;
@@ -312,17 +326,14 @@ public class MultiLevelCSVParser {
                                                  // slash if present
         if (slashIdx != -1)
             csv_ml_root = csv_ml_root.substring(0, slashIdx);
-        return obj_out;
 
     }
 
     /**
-     * Main parsing logic. Returns once an element formation is complete.
+     * Main parsing logic. Returns each time an element formation is complete.
      * 
-     * @param targetObject
-     * @param is
-     * @param toValidate
-     * @return
+     * @return Parsed object for each element that gets built at
+     *         parsedObject.getCurrentElement()
      * @throws IOException
      */
     public ParsedObject parseNext() throws IOException {

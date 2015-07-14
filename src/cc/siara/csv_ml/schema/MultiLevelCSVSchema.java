@@ -150,6 +150,8 @@ public class MultiLevelCSVSchema {
                 // Append Column values possible if any
                 int valStartPos = schemaString.length();
                 for (String value : col.getValues()) {
+                    if (value == null || value.equals(""))
+                        continue;
                     schemaString.append(',');
                     schemaString.append(value);
                 }
@@ -179,7 +181,6 @@ public class MultiLevelCSVSchema {
             }
             node = seq_path_node_map.get(seq_path);
         }
-        schemaString.append("end_schema\n");
 
     }
 

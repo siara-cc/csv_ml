@@ -162,7 +162,9 @@ public class DBBind {
                     out_str.append(col_name);
                 }
                 int last_dot_idx = path.lastIndexOf('.');
-                if (last_dot_idx != -1 && ele.getAttribute("parent_id") == null) {
+                String parentId = ele.getAttribute("parent_id");
+                if (last_dot_idx != -1
+                        && (parentId == null || parentId.equals(""))) {
                     out_str.append(", parent_id");
                 }
                 out_str.append(") VALUES (");
@@ -179,7 +181,8 @@ public class DBBind {
                             .append(ele.getAttribute(col_name).replace("\'",
                                     "''")).append("'");
                 }
-                if (last_dot_idx != -1 && ele.getAttribute("parent_id") == null) {
+                if (last_dot_idx != -1
+                        && (parentId == null || parentId.equals(""))) {
                     int earlier_dot_idx = path.lastIndexOf('.',
                             last_dot_idx - 1);
                     String parent_table_name = "";
@@ -282,16 +285,16 @@ public class DBBind {
                 if (is_first)
                     is_first = false;
                 else
-                    out_str.append(", ");
-                out_str.append(col_name);
+                    sql.append(", ");
+                sql.append(col_name);
             }
-            if (seq_path.indexOf('.') == -1)
+            if (seq_path.indexOf('.') != -1)
                 sql.append(", parent_id");
             sql.append(", id FROM ");
             sql.append(node_name);
             if (seq_path.indexOf('.') == -1) {
                 sql.append(" WHERE id='");
-                sql.append(id[Integer.parseInt(seq_path)-1]);
+                sql.append(id[Integer.parseInt(seq_path) - 1]);
             } else {
                 sql.append(" WHERE parent_id='");
                 sql.append(id[0]);
@@ -302,25 +305,34 @@ public class DBBind {
             Statement stmt = null;
             ResultSet rs = null;
             try {
+
                 stmt = jdbcCon.createStatement();
                 rs = stmt.executeQuery(sql.toString());
-                out_str.append(prefix);
-                out_str.append(node_name);
                 while (rs.next()) {
-                    for (Column col : node.getColumns()) {
+                    out_str.append(prefix);
+                    out_str.append(node_name);
+                    for (Column col : columns_obj) {
                         String col_alias = col.getAlias();
-                        if (col_alias == null)
+                        if (col_alias == null || col_alias.equals(""))
                             col_alias = col.getName();
                         out_str.append(',');
                         out_str.append(Util.encodeToCSVText(rs
                                 .getString(col_alias)));
                     }
+                    if (seq_path.indexOf('.') != -1) {
+                        out_str.append(',');
+                        out_str.append(Util.encodeToCSVText(rs
+                                .getString("parent_id")));
+                    }
+                    out_str.append(',');
+                    out_str.append(Util.encodeToCSVText(rs.getString("id")));
                     out_str.append("\n");
                     // Recursively generate data for children
                     generateSQLRecursively(schema, seq_path,
                             prefix.concat(" "), out_str, jdbcCon,
                             new String[] { rs.getString("id") });
                 }
+
             } catch (Exception e) {
                 e.printStackTrace();
                 return;
@@ -334,18 +346,19 @@ public class DBBind {
                     e.printStackTrace();
                 }
             }
-        }
 
-        // Repeat for a sibling
-        int seqIdx = seq_path.lastIndexOf('.');
-        if (seqIdx == -1)
-            seq_path = String.valueOf(Integer.parseInt(seq_path) + 1);
-        else {
-            seq_path = seq_path.substring(0, seqIdx).concat(
-                    String.valueOf(Integer.parseInt(seq_path
-                            .substring(seqIdx + 1) + 1)));
+            // Repeat for a sibling
+            int seqIdx = seq_path.lastIndexOf('.');
+            if (seqIdx == -1)
+                seq_path = String.valueOf(Integer.parseInt(seq_path) + 1);
+            else {
+                seq_path = seq_path.substring(0, seqIdx + 1).concat(
+                        String.valueOf(Integer.parseInt(seq_path
+                                .substring(seqIdx + 1)) + 1));
+            }
+            node = schema.getNodeBySeqPath(seq_path);
+
         }
-        node = schema.getNodeBySeqPath(seq_path);
 
     }
 
@@ -371,6 +384,7 @@ public class DBBind {
             StringBuffer out_str, Connection jdbcCon, String[] id) {
         out_str.append("csv_ml,1.0\n");
         schema.outputSchemaRecursively(out_str, "", "", true);
+        out_str.append("end_schema\n");
         generateSQLRecursively(schema, "", "", out_str, jdbcCon, id);
     }
 

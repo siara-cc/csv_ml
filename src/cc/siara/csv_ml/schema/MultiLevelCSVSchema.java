@@ -141,8 +141,11 @@ public class MultiLevelCSVSchema {
                 // Append Column Type if any
                 String col_type = col.getType();
                 if (col_type != null && !col_type.equals("")
-                        && !col_type.equals("text"))
+                        && !col_type.equals("text")) {
+                    if (col_len == null || col_len.equals(""))
+                        schemaString.append("()");
                     schemaString.append(col_type);
+                }
                 // Append Column Default if any
                 String col_default = col.getColDefault();
                 if (col_default != null)
@@ -175,9 +178,9 @@ public class MultiLevelCSVSchema {
             if (seqIdx == -1)
                 seq_path = String.valueOf(Integer.parseInt(seq_path) + 1);
             else {
-                seq_path = seq_path.substring(0, seqIdx).concat(
+                seq_path = seq_path.substring(0, seqIdx+1).concat(
                         String.valueOf(Integer.parseInt(seq_path
-                                .substring(seqIdx + 1) + 1)));
+                                .substring(seqIdx + 1)) + 1));
             }
             node = seq_path_node_map.get(seq_path);
         }

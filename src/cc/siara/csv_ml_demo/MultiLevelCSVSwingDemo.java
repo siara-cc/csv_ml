@@ -57,6 +57,7 @@ import org.xml.sax.InputSource;
 import cc.siara.csv_ml.DBBind;
 import cc.siara.csv_ml.MultiLevelCSVParser;
 import cc.siara.csv_ml.Outputter;
+import cc.siara.csv_ml.ParsedObject;
 import cc.siara.csv_ml.Util;
 
 /**
@@ -140,6 +141,22 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         int selectedIdx = cbExamples.getSelectedIndex();
         String egString = aExampleCSV[selectedIdx];
         taInput.setText(egString);
+        try {
+            // Load schema corresponding to Example so that Retrieve button can
+            // be clicked
+            parser.initParse(
+                    ParsedObject.TARGET_W3C_DOC,
+                    new cc.siara.csv_ml.InputSource(new StringReader(egString)),
+                    false);
+            String selectedItem = cbExamples.getSelectedItem().toString();
+            String exampleSectionNumber = selectedItem.substring(0, selectedItem.indexOf(':'));
+            tfDBURL.setText("jdbc:sqlite:test" + exampleSectionNumber + ".db");
+            if (exampleSectionNumber.equals("1.5"))
+                tfID.setText("1,1");
+        } catch (IOException e) {
+            JOptionPane.showMessageDialog(null, "IOException");
+            e.printStackTrace();
+        }
         tfInputSize.setText(String.valueOf(egString.length()));
         taInput.setCaretPosition(0);
         tfXPath.setText(aExampleXPath[selectedIdx]);
@@ -335,6 +352,11 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             con = DriverManager.getConnection(tfDBURL.getText());
             String out_str = DBBind.runStatements(taOutput.getText(), con);
             taOutput.setText(out_str);
+            if (out_str.indexOf("\nERROR:") != -1) {
+                JOptionPane
+                        .showMessageDialog(null,
+                                "Error(s) found. Please check Output box for error messages");
+            }
             tfOutputSize.setText(String.valueOf(out_str.length()));
         } catch (SQLException e) {
             e.printStackTrace();
@@ -368,12 +390,19 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             String id = tfID.getText();
             String[] arr_id = null;
             if (id.indexOf(',') == -1)
-                arr_id = new String[] {id};
+                arr_id = new String[] { id };
             else
                 arr_id = id.split(",");
             DBBind.generateSQL(parser.getSchema(), out_str, con, arr_id);
-            taOutput.setText(out_str.toString());
-            tfOutputSize.setText(String.valueOf(out_str.length()));
+            String end_schema = "end_schema\n";
+            if (out_str.lastIndexOf(end_schema) == out_str.length()
+                    - end_schema.length()) {
+                JOptionPane.showMessageDialog(null,
+                        "No data found.  Please run DDL/DML first");
+            } else {
+                taInput.setText(out_str.toString());
+                tfInputSize.setText(String.valueOf(out_str.length()));
+            }
         } catch (SQLException e) {
             e.printStackTrace();
             JOptionPane.showMessageDialog(null,
@@ -463,7 +492,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "csv_ml,1.0\nstudent,name(40)text,nick(30)text=null,subject(30)text,marks(3)integer\n1,abc,pqr,physics,53\n1,xyz,,physics,73",
             "csv_ml,1.0\nstudent,name(40)text,nick(30)text=,subject(30)text,marks(3)integer\n1,abc,pqr,physics,53\n1,xyz,,physics,73",
             "csv_ml,1.0\nstudent,name(40)text,subject(30)text,\"marks(6,2)numeric\"\n1,abc,physics,53.34\n1,xyz,physics,73.5",
-            "csv_ml,1.0\nstudent,name,subject,marks,birth_date()date,join_date_time()datetime\n1,abc,physics,53.34,1982-01-23,2014-02-22 09:30:00\n1,xyz,physics,73.5,1985-11-12,2014-02-24 15:45:30",
+            "csv_ml,1.0\nstudent,name,subject,marks,birth_date()date,join_date_time()datetime\n1,abc,physics,53.34,19820123,20140222093000\n1,xyz,physics,73.5,19851112,20140224154530",
             "csv_ml,1.0\nstudent,id,name,subject,marks\n1,,abc,physics,53\n1,,abc,chemistry,54\n1,3,xyz,physics,73\n1,*4,xyz,physics,73",
             "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n reference,name,company,designation\n1,abc,24\n 1,bs,2010\n 1,ms,2012\n 2,pqr,bbb,executive\n 2,mno,bbb,director's secretary" };
 

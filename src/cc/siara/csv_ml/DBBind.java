@@ -178,8 +178,8 @@ public class DBBind {
                     else
                         out_str.append(", ");
                     out_str.append("'")
-                            .append(ele.getAttribute(col_name).replace("\'",
-                                    "''")).append("'");
+                            .append(formatValue(ele.getAttribute(col_name),
+                                    col_obj)).append("'");
                 }
                 if (last_dot_idx != -1
                         && (parentId == null || parentId.equals(""))) {
@@ -242,6 +242,20 @@ public class DBBind {
 
     }
 
+    private static String formatValue(String attribute, Column col_obj) {
+        StringBuffer sbRet = new StringBuffer(attribute.replace("\'", "''"));
+        if (col_obj.getType().startsWith("date")) {
+            sbRet.insert(4, '-');
+            sbRet.insert(7, '-');
+        }
+        if (col_obj.getType().equals("datetime")) {
+            sbRet.insert(10, ' ');
+            sbRet.insert(13, ':');
+            sbRet.insert(16, ':');
+        }
+        return sbRet.toString();
+    }
+
     /**
      * Generates SQL (SELECT statements) recursively, executes them against the
      * given Connection object and returns a csv_ml string in out_str.
@@ -278,7 +292,7 @@ public class DBBind {
             String node_name = node.getName();
 
             // Generate SQL Statement
-            StringBuffer sql = new StringBuffer("SELECT ");
+            StringBuffer sql = new StringBuffer("Select ");
             boolean is_first = true;
             for (Column col_obj : columns_obj) {
                 String col_name = col_obj.getName();
@@ -288,18 +302,24 @@ public class DBBind {
                     sql.append(", ");
                 sql.append(col_name);
             }
-            if (seq_path.indexOf('.') != -1)
-                sql.append(", parent_id");
-            sql.append(", id FROM ");
+            String parentIdStr = ", parent_id";
+            if (seq_path.indexOf('.') != -1 && sql.indexOf(parentIdStr) == -1)
+                sql.append(parentIdStr);
+            String idStr = ", id";
+            if (sql.indexOf(idStr) == -1)
+                sql.append(idStr);
+            sql.append(" From ");
             sql.append(node_name);
             if (seq_path.indexOf('.') == -1) {
-                sql.append(" WHERE id='");
+                sql.append(" Where id='");
                 sql.append(id[Integer.parseInt(seq_path) - 1]);
             } else {
-                sql.append(" WHERE parent_id='");
+                sql.append(" Where parent_id='");
                 sql.append(id[0]);
             }
             sql.append("'");
+            out_str.append(prefix);
+            out_str.append("/* ").append(sql).append(" */\n");
 
             // Run the SQL and generate record
             Statement stmt = null;
@@ -424,6 +444,7 @@ public class DBBind {
                         if (is_within_quote) {
                             if (stmt_pos + 1 < statements.length()
                                     && statements.charAt(stmt_pos + 1) == '\'') {
+                                stmt_str.append('\'');
                                 stmt_pos++;
                             } else
                                 is_within_quote = false;
@@ -437,10 +458,10 @@ public class DBBind {
                 out_str.append(stmt_str).append("\n");
                 try {
                     int result = stmt.executeUpdate(stmt_str.toString());
-                    out_str.append("Success: ").append(result)
+                    out_str.append("SUCCESS: ").append(result)
                             .append(" records affected.\n\n");
                 } catch (SQLException e) {
-                    out_str.append("Error:").append(e.getMessage())
+                    out_str.append("ERROR:").append(e.getMessage())
                             .append("\n\n");
                 }
                 stmt_str.setLength(0);

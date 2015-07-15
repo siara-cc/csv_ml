@@ -353,6 +353,11 @@ public class MultiLevelCSVParser {
                     continue;
                 }
 
+                // trim if having leading spaces
+                if (value.charAt(0) == ' ') {
+                    value = value.trim();
+                }
+
                 if (csv_ml_schema.equals("no_schema")) {
 
                     // Generates node names if no schema specified

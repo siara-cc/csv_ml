@@ -1,9 +1,6 @@
-* for delete move to node name
 Validation
-javadoc
-db retrieve
-namespaces problem
-Retrieval parameters
 directive and namespace in output
-node index in output
 Character encoding - add example
+Retrieve - fix and test in all platforms
+XPath on namespace not working
+tab char support and doc

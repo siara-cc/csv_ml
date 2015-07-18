@@ -22,7 +22,11 @@ import java.awt.Container;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.StringReader;
 import java.sql.Connection;
 import java.sql.DriverManager;
@@ -35,6 +39,8 @@ import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
+import javax.swing.JRadioButton;
+import javax.swing.JRadioButtonMenuItem;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
@@ -77,6 +83,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     }
     private static final long serialVersionUID = 5786609711433744144L;
     MultiLevelCSVParser parser = new MultiLevelCSVParser();
+    private boolean isInputChanged = false;
 
     /**
      * Constructor that adds components to the container, sets layout and opens
@@ -99,6 +106,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         container.add(cbExamples);
         container.add(lblInputSize);
         container.add(tfInputSize);
+        container.add(lblDelimiter);
+        container.add(cbDelimiter);
+        container.add(tfDelimiter);
         container.add(taInputScroll);
         container.add(lblOutput);
         container.add(btnDDLDML);
@@ -122,6 +132,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         taOutput.setBorder(BorderFactory.createLineBorder(getForeground()));
         setInputText();
         cbExamples.addActionListener(this);
+        cbDelimiter.addActionListener(this);
         btnXML.addActionListener(this);
         btnDDLDML.addActionListener(this);
         btnJSON.addActionListener(this);
@@ -129,9 +140,61 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         btnXPath.addActionListener(this);
         btnRunDDL.addActionListener(this);
         btnGetData.addActionListener(this);
+        taInput.addKeyListener(new KeyListener() {
+            public void keyTyped(KeyEvent arg0) {
+                isInputChanged = true;
+            }
+
+            public void keyReleased(KeyEvent arg0) {
+            }
+
+            public void keyPressed(KeyEvent arg0) {
+            }
+        });
         tfInputSize.setEditable(false);
         tfOutputSize.setEditable(false);
         setVisible(true);
+    }
+
+    private static final short DM_COMMA = 0;
+    private static final short DM_TAB = 1;
+    private static final short DM_OTHER = 2;
+
+    /**
+     * Sets value to textbox and scrolls to top
+     */
+    void setDelimiter() {
+        int selectedIdx = cbDelimiter.getSelectedIndex();
+        switch (selectedIdx) {
+        case DM_COMMA:
+            parser.setDelimiter(',');
+            break;
+        case DM_TAB:
+            parser.setDelimiter('\t');
+            break;
+        case DM_OTHER:
+            String d = tfDelimiter.getText();
+            if (d.length() == 1) {
+                char c = d.charAt(0);
+                if ("\"\n\r".indexOf(c) == -1)
+                    parser.setDelimiter(c);
+                else {
+                    parser.setDelimiter('\t');
+                    cbDelimiter.setSelectedIndex(DM_TAB);
+                    JOptionPane.showMessageDialog(null,
+                            "Illegal character for delimiter");
+                }
+            } else {
+                parser.setDelimiter('\t');
+                cbDelimiter.setSelectedIndex(DM_TAB);
+                parser.setDelimiter('\t');
+                JOptionPane.showMessageDialog(null,
+                        "Delimiter should be single lettered");
+            }
+            break;
+        }
+        if (!isInputChanged)
+            setInputText();
     }
 
     /**
@@ -139,7 +202,26 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
      */
     void setInputText() {
         int selectedIdx = cbExamples.getSelectedIndex();
-        String egString = aExampleCSV[selectedIdx];
+        int delimIdx = cbDelimiter.getSelectedIndex();
+        String egString = null;
+        switch (delimIdx) {
+        case DM_COMMA:
+            egString = aExampleCSV[selectedIdx];
+            break;
+        case DM_TAB:
+            egString = aExampleTDV[selectedIdx];
+            break;
+        case DM_OTHER:
+            egString = aExampleTDV[selectedIdx];
+            String d = tfDelimiter.getText();
+            if (d.length() == 1) {
+                egString = egString.replace('\t', d.charAt(0));
+            } else {
+                egString = aExampleCSV[selectedIdx];
+                tfDelimiter.setText(",");
+            }
+            break;
+        }
         taInput.setText(egString);
         try {
             // Load schema corresponding to Example so that Retrieve button can
@@ -149,7 +231,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
                     new cc.siara.csv_ml.InputSource(new StringReader(egString)),
                     false);
             String selectedItem = cbExamples.getSelectedItem().toString();
-            String exampleSectionNumber = selectedItem.substring(0, selectedItem.indexOf(':'));
+            String exampleSectionNumber = selectedItem.substring(0,
+                    selectedItem.indexOf(':'));
             tfDBURL.setText("jdbc:sqlite:test" + exampleSectionNumber + ".db");
             if (exampleSectionNumber.equals("1.5"))
                 tfID.setText("1,1");
@@ -160,6 +243,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         tfInputSize.setText(String.valueOf(egString.length()));
         taInput.setCaretPosition(0);
         tfXPath.setText(aExampleXPath[selectedIdx]);
+        isInputChanged = false;
     }
 
     /**
@@ -183,7 +267,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     private Document parseInputToDOM() {
         Document doc = null;
         try {
-            doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
+            InputStream is = new ByteArrayInputStream(taInput.getText()
+                    .getBytes());
+            doc = parser.parseToDOM(is, false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
@@ -204,7 +290,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     private void toDDLDML() {
         Document doc = null;
         try {
-            doc = parser.parseToDOM(new StringReader(taInput.getText()), false);
+            InputStream is = new ByteArrayInputStream(taInput.getText()
+                    .getBytes());
+            doc = parser.parseToDOM(is, false);
             String ex_str = parser.getEx().get_all_exceptions();
             if (ex_str.length() > 0) {
                 JOptionPane.showMessageDialog(null, ex_str);
@@ -428,6 +516,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     public void actionPerformed(ActionEvent e) {
         if (e.getSource().equals(cbExamples))
             setInputText();
+        if (e.getSource().equals(cbDelimiter))
+            setDelimiter();
         if (e.getSource().equals(btnXML))
             toXML();
         if (e.getSource().equals(btnJSON))
@@ -443,6 +533,9 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         if (e.getSource().equals(btnGetData))
             runSQL();
     }
+
+    // List of example titles (of csv_ml) corresponding to documentation
+    String[] aDelimiter = new String[] { "Comma", "Tab", "Other:" };
 
     // List of example titles (of csv_ml) corresponding to documentation
     String[] aExamples = new String[] { "1.1: Conventional CSV",
@@ -466,7 +559,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "4.6: Schema - Special column 'id'",
             "4.7: Schema - Special column 'parent_id'" };
 
-    // List of example csv_ml corresponding to documentation
+    // List of example csv_ml corresponding to documentation in CSV format
     String[] aExampleCSV = new String[] {
             "abc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
             "csv_ml,1.0,UTF-8,root,no_node_name,inline\nname,subject,marks\nabc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
@@ -496,6 +589,37 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "csv_ml,1.0\nstudent,id,name,subject,marks\n1,,abc,physics,53\n1,,abc,chemistry,54\n1,3,xyz,physics,73\n1,*4,xyz,physics,73",
             "csv_ml,1.0\nstudent,name,age\n education,course_name,year_passed\n reference,name,company,designation\n1,abc,24\n 1,bs,2010\n 1,ms,2012\n 2,pqr,bbb,executive\n 2,mno,bbb,director's secretary" };
 
+    // List of example csv_ml corresponding to documentation in Tab delimited
+    // format
+    String[] aExampleTDV = new String[] {
+            "abc\tphysics\t53\nabc\tchemistry\t65\nxyz\tphysics\t73\nxyz\tchemistry\t76",
+            "csv_ml\t1.0\tUTF-8\troot\tno_node_name\tinline\nname\tsubject\tmarks\nabc\tphysics\t53\nabc\tchemistry\t65\nxyz\tphysics\t73\nxyz\tchemistry\t76",
+            "csv_ml\t1.0\tUTF-8\troot\twith_node_name\tinline\nstudent\tname\tsubject\tmarks\nend_schema\nstudent\tabc\tphysics\t53\nstudent\tabc\tchemistry\t65\nstudent\txyz\tphysics\t73\nstudent\txyz\tchemistry\t76",
+            "csv_ml\t1.0\nstudent\tname\tsubject\tmarks\n1\tabc\tphysics\t53\n1\tabc\tchemistry\t65\n1\txyz\tphysics\t73\n1\txyz\tchemistry\t76",
+            "csv_ml\t1.0\nstudent\tname\tsubject\tmarks\nfaculty\tname\tsubject\n1\tabc\tphysics\t53\n1\tabc\tchemistry\t65\n1\txyz\tphysics\t73\n1\txyz\tchemistry\t76\n2\tpqr\tphysics\n2\tbcd\tchemistry",
+            "csv_ml\t1.0\nstudent\tname\tage\n education\tcourse_name\tyear_passed\n  subject\tname\tmarks\n1\tabc\t24\n 1\tbs\t2010\n  1\tphysics\t53\n  1\tchemistry\t65\n 1\tms\t2012\n  1\tphysics\t74\n  1\tchemistry\t75\n1\txyz\t24\n 1\tbs\t2010\n  1\tphysics\t67\n  1\tchemistry\t85",
+            "csv_ml\t1.0\nstudent\tname\tage\n education\tcourse_name\tyear_passed\n  subject\tname\tmarks\n reference\tname\tcompany\tdesignation\n1\tabc\t24\n 1\tbs\t2010\n  1\tphysics\t53\n  1\tchemistry\t65\n 1\tms\t2012\n  1\tphysics\t74\n  1\tchemistry\t75\n 2\tpqr\tbbb\texecutive\n 2\tmno\tbbb\tdirector\n1\txyz\t24\n 1\tbs\t2010\n  1\tphysics\t67\n  1\tchemistry\t85",
+            "csv_ml\t1.0\nstudent\tname\tage\n1\ta\n1\tb\t23\tHis record is remarkable\n1\tc\t24\tHis record is remarkable\tHis performance is exemplary",
+            "csv_ml\t1.0\nstudent\n name\n age\n1\n 1\ta\n 2\t23",
+            "csv_ml\t1.0\nsample\ttext\n1\tNo quote\n1\t No quote with preceding space\n1\tWith quote (\")\n1\t\"With quotes\t and \"\"comma\"\"\"\n1\t \"With quotes\t (space ignored)\"\n1\t \"\"\"Enclosed\t with double quote\"\"\"\n1\t \"\"\"Single\t preceding double quote\"\n1\t \"Double quote\t suffix\"\"\"\n1\t \"Double quote\t (\"\") in the middle\"\n1\t \"More\n\nthan\n\none\n\nline\"",
+            "/* You can have comments anywhere\t\n   even at the beginning\n*/\ncsv_ml\t1.0\n\n/* And empty lines like this */\n\nsample\ttext1\ttext2\n1\t/* This is a comment */ \"hello\"\t \"world\" /* End of line comment */\n1\t/* This is also a comment */\t \"/* But this isn't */\"\n\n1\t\"third\"\t \"line\" /* Multiline\ncomment */\n/* Comment at beginning of line */1\t \"fourth\" \t \"line\"",
+            "csv_ml\t1.0\tUTF-8\tdata\nstudent\tname\tage\n1\ta\t24",
+            "csv_ml\t1.0\tUTF-8\tstudent\nstudent\tname\tage\n1\ta\t24",
+            "csv_ml\t1.0\tUTF-8\tstudent\nstudent\tname\tage\n1\ta\t24\n1\tb\t35",
+            "csv_ml\t1.0\tUTF-8\tstudent\nstudent\tname\tage\nfaculty\tname\tage\n1\ta\t24\n2\tb\t45",
+            "csv_ml\t1.0\nour:student\this:name\tage\txmlns:his\txmlns:our\n1\ta\t24\thttp://siara.cc/his\thttp://siara.cc/our\n1\tb\t26\thttp://siara.cc/his\thttp://siara.cc/our",
+            "csv_ml\t1.0\tUTF-8\troot/our='http://siara.cc/our' his='http://siara.cc/his'\nour:student\this:name\tage\n1\ta\t24\n1\tb\t26",
+            "csv_ml\t1.0\tUTF-8\txsl:stylesheet/xsl='http://www.w3.org/1999/XSL/Transform'\nxsl:stylesheet\tversion\n xsl:template\tmatch\n  xsl:value-of\tselect\n1\t1.0\n 1\t//student\n  1\t@name\n  1\t@age",
+            "csv_ml\t1.0\tUTF-8\txsl:stylesheet/xsl='http://www.w3.org/1999/XSL/Transform'\n01\txsl:value-of\tselect\n02\txsl:for-each\tselect\n 01\nxsl:stylesheet\tversion\n xsl:template\tmatch\n  01\t02\n1\t1.0\n 1\t//student\n  01\t@name\n  01\t@age\n  02\teducation\n   01\t@course_name\n   01\t@year_passed",
+            "csv_ml\t1.0\nstudent\tname(40)text\tsubject(30)text\tmarks(3)integer\n1\tabc\tphysics\t53\n1\txyz\tphysics\t73",
+            "csv_ml\t1.0\nstudent\tname(40)text\tsubject(30)text=physics\tmarks(3)integer\n1\tabc\tmaths\t53\n1\txyz\tchemistry\t73",
+            "csv_ml\t1.0\nstudent\tname(40)text\tnick(30)text=null\tsubject(30)text\tmarks(3)integer\n1\tabc\tpqr\tphysics\t53\n1\txyz\t\tphysics\t73",
+            "csv_ml\t1.0\nstudent\tname(40)text\tnick(30)text=\tsubject(30)text\tmarks(3)integer\n1\tabc\tpqr\tphysics\t53\n1\txyz\t\tphysics\t73",
+            "csv_ml\t1.0\nstudent\tname(40)text\tsubject(30)text\t\"marks(6,2)numeric\"\n1\tabc\tphysics\t53.34\n1\txyz\tphysics\t73.5",
+            "csv_ml\t1.0\nstudent\tname\tsubject\tmarks\tbirth_date()date\tjoin_date_time()datetime\n1\tabc\tphysics\t53.34\t19820123\t20140222093000\n1\txyz\tphysics\t73.5\t19851112\t20140224154530",
+            "csv_ml\t1.0\nstudent\tid\tname\tsubject\tmarks\n1\t\tabc\tphysics\t53\n1\t\tabc\tchemistry\t54\n1\t3\txyz\tphysics\t73\n1\t*4\txyz\tphysics\t73",
+            "csv_ml\t1.0\nstudent\tname\tage\n education\tcourse_name\tyear_passed\n reference\tname\tcompany\tdesignation\n1\tabc\t24\n 1\tbs\t2010\n 1\tms\t2012\n 2\tpqr\tbbb\texecutive\n 2\tmno\tbbb\tdirector's secretary" };
+
     String[] aExampleXPath = new String[] {
             "concat('Total of xyz:', sum(root/n1[@c1='xyz']/@c3))",
             "concat('Total of xyz:', sum(root/n1[@name='xyz']/@marks))",
@@ -512,13 +636,16 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "/xsl:stylesheet", "", "", "", "", "", "", "", "", "", "" };
 
     // Components
-    JLabel lblInput = new JLabel("Input (csv):");
+    JLabel lblInput = new JLabel("Input:");
     JComboBox<String> cbExamples = new JComboBox<String>(aExamples);
-    JLabel lblInputSize = new JLabel("Input size:");
+    JLabel lblInputSize = new JLabel("Input Size:");
     JTextField tfInputSize = new JTextField("0", 3);
+    JLabel lblDelimiter = new JLabel("Delimiter:");
+    JComboBox<String> cbDelimiter = new JComboBox<String>(aDelimiter);
+    JTextField tfDelimiter = new JTextField("|", 1);
     JTextArea taInput = new JTextArea(15, 70);
     JScrollPane taInputScroll = new JScrollPane(taInput);
-    JLabel lblOutput = new JLabel("Output (csv):");
+    JLabel lblOutput = new JLabel("Output:");
     JButton btnDDLDML = new JButton("DDL/DML");
     JButton btnJSON = new JButton("JSON");
     JButton btnXML = new JButton("XML");

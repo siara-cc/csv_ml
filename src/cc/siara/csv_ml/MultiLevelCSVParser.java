@@ -542,4 +542,13 @@ public class MultiLevelCSVParser {
         return ex;
     }
 
+    /**
+     * Sets delimiter character used for parsing
+     * 
+     * @param d Delimiter
+     */
+    public void setDelimiter(char d) {
+        csv_parser.setDelimiter(d);
+    }
+
 }

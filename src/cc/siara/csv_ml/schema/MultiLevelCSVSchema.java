@@ -173,12 +173,13 @@ public class MultiLevelCSVSchema {
                 schemaString.append(",id");
             }
             schemaString.append("\n");
-            outputSchemaRecursively(schemaString, seq_path, prefix.concat(" "), includeId);
+            outputSchemaRecursively(schemaString, seq_path, prefix.concat(" "),
+                    includeId);
             int seqIdx = seq_path.lastIndexOf('.');
             if (seqIdx == -1)
                 seq_path = String.valueOf(Integer.parseInt(seq_path) + 1);
             else {
-                seq_path = seq_path.substring(0, seqIdx+1).concat(
+                seq_path = seq_path.substring(0, seqIdx + 1).concat(
                         String.valueOf(Integer.parseInt(seq_path
                                 .substring(seqIdx + 1)) + 1));
             }
@@ -295,9 +296,12 @@ public class MultiLevelCSVSchema {
                 }
             } else if (token_ctr > 0 && !is0ref) {
                 // Remaining are column definitions
-                Column column_obj = new Column();
-                prev_node_obj.addColumn(column_obj);
-                column_obj.parseColumnSchema(value);
+                value = value.trim();
+                if (!value.equals("")) {
+                    Column column_obj = new Column();
+                    prev_node_obj.addColumn(column_obj);
+                    column_obj.parseColumnSchema(value);
+                }
             }
 
             if (is0ref) {

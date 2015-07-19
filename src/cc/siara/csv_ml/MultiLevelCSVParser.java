@@ -251,7 +251,8 @@ public class MultiLevelCSVParser {
             // Element parsedElement = parsedObject.getCurrentElement();
             // // Do something with parsedElement here
             // // if necessary free memory by deleting attributes
-            // // // or even remove parseElement itself from the document object after use
+            // // // or even remove parseElement itself from the document object
+            // after use
             // }
         }
         return obj_out;
@@ -298,10 +299,17 @@ public class MultiLevelCSVParser {
         // If the encoding changed for a
         // byte input stream, reinitialize with
         // different encoding
-        if (!orig_encoding.equals(csv_ml_encoding)) {
-            if (is.getType() == InputSource.IS_BYTE_STREAM)
-                r = new InputStreamReader(is.getInputStream(), csv_ml_encoding);
-        }
+        // This is commented because it is not working
+        // apparently because InputStreamReader reads more bytes
+        // than it requires from the InputStream and assigning
+        // the stream to a new InputStreamReader does not read it correctly
+        // if (!orig_encoding.equals(csv_ml_encoding)) {
+        // if (is.getType() == InputSource.IS_BYTE_STREAM) {
+        // r = new InputStreamReader(is.getInputStream(), csv_ml_encoding);
+        // }
+        // }
+        // TODO: To read the directive as InputStream and to create
+        // new InputStreamReader depending on given encoding
 
         // Parse Schema if present
         if (csv_ml_schema.equals("inline"))
@@ -545,7 +553,8 @@ public class MultiLevelCSVParser {
     /**
      * Sets delimiter character used for parsing
      * 
-     * @param d Delimiter
+     * @param d
+     *            Delimiter
      */
     public void setDelimiter(char d) {
         csv_parser.setDelimiter(d);

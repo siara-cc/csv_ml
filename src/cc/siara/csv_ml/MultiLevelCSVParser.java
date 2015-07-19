@@ -51,9 +51,9 @@ public class MultiLevelCSVParser {
     String csv_ml_root = "root"; // root node name
     String csv_ml_node_name = "no_node_name"; // other possible value -
                                               // with_node_name
-    String csv_ml_schema = "no_schema"; // other possible values - inline,
-                                        // external. If external, next field
-                                        // should contain valid path to file
+    String csv_ml_schema = "inline"; // other possible values - inline,
+                                     // external. If external, next field
+                                     // should contain valid path to file
     String csv_ml_schema_file = ""; // path to schema file
 
     // Associated classes
@@ -283,7 +283,7 @@ public class MultiLevelCSVParser {
         csv_ml_encoding = "UTF-8";
         csv_ml_root = "root";
         csv_ml_node_name = "no_node_name";
-        csv_ml_schema = "no_schema";
+        csv_ml_schema = "inline";
         csv_ml_schema_file = "";
         schema = new MultiLevelCSVSchema();
 

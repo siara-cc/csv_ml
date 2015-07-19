@@ -109,6 +109,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         container.add(lblDelimiter);
         container.add(cbDelimiter);
         container.add(tfDelimiter);
+        container.add(btnAbout);
         container.add(taInputScroll);
         container.add(lblOutput);
         container.add(btnDDLDML);
@@ -133,6 +134,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
         setInputText();
         cbExamples.addActionListener(this);
         cbDelimiter.addActionListener(this);
+        btnAbout.addActionListener(this);
         btnXML.addActionListener(this);
         btnDDLDML.addActionListener(this);
         btnJSON.addActionListener(this);
@@ -532,6 +534,12 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             runDDL();
         if (e.getSource().equals(btnGetData))
             runSQL();
+        if (e.getSource().equals(btnAbout)) {
+            JOptionPane.showMessageDialog(null,
+                    "Multi-level (nested) CSV Demo Application\n\n"
+                            + "(c) Siara Logics (cc)\n\n"
+                            + "http://siara.cc/csv_ml");
+        }
     }
 
     // List of example titles (of csv_ml) corresponding to documentation
@@ -539,7 +547,7 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
 
     // List of example titles (of csv_ml) corresponding to documentation
     String[] aExamples = new String[] { "1.1: Conventional CSV",
-            "1.2: Conventional CSV with Header",
+            "1.2: Conventional CSV without Header",
             "1.3: Conventional CSV with Header and Node name",
             "1.4: Conventional CSV with Header and Node index",
             "1.5: Multiple nodes under root", "2.1: Multiple level CSV data",
@@ -561,8 +569,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
 
     // List of example csv_ml corresponding to documentation in CSV format
     String[] aExampleCSV = new String[] {
-            "abc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
-            "csv_ml,1.0,UTF-8,root,no_node_name,inline\nname,subject,marks\nabc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
+            "name,subject,marks\nabc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
+            "csv_ml,1.0,UTF-8,root,no_node_name,no_schema\nabc,physics,53\nabc,chemistry,65\nxyz,physics,73\nxyz,chemistry,76",
             "csv_ml,1.0,UTF-8,root,with_node_name,inline\nstudent,name,subject,marks\nend_schema\nstudent,abc,physics,53\nstudent,abc,chemistry,65\nstudent,xyz,physics,73\nstudent,xyz,chemistry,76",
             "csv_ml,1.0\nstudent,name,subject,marks\n1,abc,physics,53\n1,abc,chemistry,65\n1,xyz,physics,73\n1,xyz,chemistry,76",
             "csv_ml,1.0\nstudent,name,subject,marks\nfaculty,name,subject\n1,abc,physics,53\n1,abc,chemistry,65\n1,xyz,physics,73\n1,xyz,chemistry,76\n2,pqr,physics\n2,bcd,chemistry",
@@ -592,8 +600,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     // List of example csv_ml corresponding to documentation in Tab delimited
     // format
     String[] aExampleTDV = new String[] {
-            "abc\tphysics\t53\nabc\tchemistry\t65\nxyz\tphysics\t73\nxyz\tchemistry\t76",
-            "csv_ml\t1.0\tUTF-8\troot\tno_node_name\tinline\nname\tsubject\tmarks\nabc\tphysics\t53\nabc\tchemistry\t65\nxyz\tphysics\t73\nxyz\tchemistry\t76",
+            "name\tsubject\tmarks\nabc\tphysics\t53\nabc\tchemistry\t65\nxyz\tphysics\t73\nxyz\tchemistry\t76",
+            "csv_ml\t1.0\tUTF-8\troot\tno_node_name\tno_schema\nabc\tphysics\t53\nabc\tchemistry\t65\nxyz\tphysics\t73\nxyz\tchemistry\t76",
             "csv_ml\t1.0\tUTF-8\troot\twith_node_name\tinline\nstudent\tname\tsubject\tmarks\nend_schema\nstudent\tabc\tphysics\t53\nstudent\tabc\tchemistry\t65\nstudent\txyz\tphysics\t73\nstudent\txyz\tchemistry\t76",
             "csv_ml\t1.0\nstudent\tname\tsubject\tmarks\n1\tabc\tphysics\t53\n1\tabc\tchemistry\t65\n1\txyz\tphysics\t73\n1\txyz\tchemistry\t76",
             "csv_ml\t1.0\nstudent\tname\tsubject\tmarks\nfaculty\tname\tsubject\n1\tabc\tphysics\t53\n1\tabc\tchemistry\t65\n1\txyz\tphysics\t73\n1\txyz\tchemistry\t76\n2\tpqr\tphysics\n2\tbcd\tchemistry",
@@ -636,21 +644,22 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "/xsl:stylesheet", "", "", "", "", "", "", "", "", "", "" };
 
     // Components
-    JLabel lblInput = new JLabel("Input:");
+    JLabel lblInput = new JLabel("Input");
     JComboBox<String> cbExamples = new JComboBox<String>(aExamples);
-    JLabel lblInputSize = new JLabel("Input Size:");
+    JLabel lblInputSize = new JLabel("Size");
     JTextField tfInputSize = new JTextField("0", 3);
     JLabel lblDelimiter = new JLabel("Delimiter:");
     JComboBox<String> cbDelimiter = new JComboBox<String>(aDelimiter);
     JTextField tfDelimiter = new JTextField("|", 1);
+    JButton btnAbout = new JButton("About");
     JTextArea taInput = new JTextArea(15, 70);
     JScrollPane taInputScroll = new JScrollPane(taInput);
-    JLabel lblOutput = new JLabel("Output:");
+    JLabel lblOutput = new JLabel("Output");
     JButton btnDDLDML = new JButton("DDL/DML");
     JButton btnJSON = new JButton("JSON");
     JButton btnXML = new JButton("XML");
-    JButton btnXPath = new JButton("Apply XPath:");
-    JTextField tfXPath = new JTextField("", 20);
+    JButton btnXPath = new JButton("XPath:");
+    JTextField tfXPath = new JTextField("", 28);
     JCheckBox cbPretty = new JCheckBox("Pretty?", true);
     JTextArea taOutput = new JTextArea(15, 70);
     JScrollPane taOutputScroll = new JScrollPane(taOutput);

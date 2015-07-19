@@ -12,6 +12,14 @@ csv_ml is expected to
 - be used in EAI (Application Integration) for import and export of data
 - be simpler to parse, allowing data to be available even in low memory devices
 
+Applications
+- Enterprise Application Integration (EAI)
+- Lightweight alternative to JSON or XML in Three-tier architecture
+- Alternative to XML in transfer of data using AJAX
+- Data storage and transfer format for embedded platforms such as Arduino and Raspberry PI.
+- Data storage and transfer format for mobile/tablet devices based on Android, Windows or iOS.
+- Data transfer format for spreadsheets as Tab delimited values through clipboard or otherwise.
+    
 For complete documentation and examples, download [csvdoc.pdf](http://siara.cc/csv_ml/csvdoc.pdf)
 
 The examples given in the documentation are available as demo applications:
@@ -22,6 +30,6 @@ The examples given in the documentation are available as demo applications:
 
 For running Javascript and Java Applet demos, you may have to change security settings in your browser.
 
-The given demos convert between CSV, XML and JSON (CSV to XML DOM, CSV to JSON, XML to CSV).
+The given demos convert between CSV, TDV. XML and JSON (CSV to XML DOM, CSV to JSON, TDV to XML DOM, TDV to JSON, XML to CSV).
 
 Contact arun@siara.cc for any queries or feedback.

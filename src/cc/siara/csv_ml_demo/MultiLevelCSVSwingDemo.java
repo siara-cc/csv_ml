@@ -516,29 +516,32 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
      * java.awt.event.ActionListener#actionPerformed(java.awt.event.ActionEvent)
      */
     public void actionPerformed(ActionEvent e) {
-        if (e.getSource().equals(cbExamples))
+        Object src_obj = e.getSource();
+        if (src_obj.equals(cbExamples))
             setInputText();
-        if (e.getSource().equals(cbDelimiter))
+        if (src_obj.equals(cbDelimiter))
             setDelimiter();
-        if (e.getSource().equals(btnXML))
+        if (src_obj.equals(btnXML))
             toXML();
-        if (e.getSource().equals(btnJSON))
+        if (src_obj.equals(btnJSON))
             toJSON();
-        if (e.getSource().equals(btnXPath))
+        if (src_obj.equals(btnXPath))
             processXPath();
-        if (e.getSource().equals(btnDDLDML))
+        if (src_obj.equals(btnDDLDML))
             toDDLDML();
-        if (e.getSource().equals(btnToCSV))
+        if (src_obj.equals(btnToCSV))
             xmlToCSV();
-        if (e.getSource().equals(btnRunDDL))
+        if (src_obj.equals(btnRunDDL))
             runDDL();
-        if (e.getSource().equals(btnGetData))
+        if (src_obj.equals(btnGetData))
             runSQL();
-        if (e.getSource().equals(btnAbout)) {
+        if (src_obj.equals(btnAbout)) {
             JOptionPane.showMessageDialog(null,
                     "Multi-level (nested) CSV Demo Application\n\n"
-                            + "(c) Siara Logics (cc)\n\n"
-                            + "http://siara.cc/csv_ml");
+                            + "(c) Siara Logics (cc)\n"
+                            + "http://siara.cc/csv_ml\n\n"
+                            + "License: Apache License 2.0"
+                            );
         }
     }
 
@@ -546,12 +549,12 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
     String[] aDelimiter = new String[] { "Comma", "Tab", "Other:" };
 
     // List of example titles (of csv_ml) corresponding to documentation
-    String[] aExamples = new String[] { "1.1: Conventional CSV",
-            "1.2: Conventional CSV without Header",
-            "1.3: Conventional CSV with Header and Node name",
-            "1.4: Conventional CSV with Header and Node index",
-            "1.5: Multiple nodes under root", "2.1: Multiple level CSV data",
-            "2.2: Multiple level CSV data with siblings",
+    String[] aExamples = new String[] { "1.1: Conventional Table data",
+            "1.2: Table data without Header",
+            "1.3: Table data with Header and Node name",
+            "1.4: Table data with Header and Node index",
+            "1.5: Multiple nodes under root", "2.1: Multiple level data",
+            "2.2: Multiple level data with siblings",
             "3.1: Node attributes", "3.2: Node content", "3.3: Quote handling",
             "3.4: Inline comments and empty lines",
             "3.5.1: Changing root node",
@@ -629,8 +632,8 @@ public class MultiLevelCSVSwingDemo extends JFrame implements ActionListener,
             "csv_ml\t1.0\nstudent\tname\tage\n education\tcourse_name\tyear_passed\n reference\tname\tcompany\tdesignation\n1\tabc\t24\n 1\tbs\t2010\n 1\tms\t2012\n 2\tpqr\tbbb\texecutive\n 2\tmno\tbbb\tdirector's secretary" };
 
     String[] aExampleXPath = new String[] {
-            "concat('Total of xyz:', sum(root/n1[@c1='xyz']/@c3))",
             "concat('Total of xyz:', sum(root/n1[@name='xyz']/@marks))",
+            "concat('Total of xyz:', sum(root/n1[@c1='xyz']/@c3))",
             "concat('Total of xyz:', sum(root/student[@name='xyz']/@marks))",
             "concat('Total of xyz:', sum(root/student[@name='xyz']/@marks))",
             "concat('Total of xyz:', sum(root/student[@name='xyz']/@marks))",

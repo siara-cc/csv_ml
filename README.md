@@ -30,6 +30,6 @@ The examples given in the documentation are available as demo applications:
 
 For running Javascript and Java Applet demos, you may have to change security settings in your browser.
 
-The given demos convert between CSV, TDV. XML and JSON (CSV to XML DOM, CSV to JSON, TDV to XML DOM, TDV to JSON, XML to CSV). It is basically a CSV TDV TSV <> JSON XML Convertor. It also demonstrates how database binding can be achieved using SQLite db.
+The given demos convert between CSV, TDV. XML and JSON (CSV to XML DOM, CSV to JSON, TDV to XML DOM, TDV to JSON, XML to CSV). It is basically a CSV TDV TSV to JSON XML Convertor. It also demonstrates how database binding can be achieved using SQLite db.
 
 Contact arun@siara.cc for any queries or feedback.

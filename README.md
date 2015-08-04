@@ -1,8 +1,12 @@
 #Multi-level CSV (csv_ml)
 
-csv_ml attempts to provide a simple unambiguous format for representing structured data that includes schema definition.
+This is an Advanced Parser for CSV (Comma-separated-value), TSV (Tab-separated-value), TDV (Tab-delimited-value) or even files with custom delimiters such as the Pipe symbol (|).  It supports streams and pull parsing for handling huge data files.  It also supports comments and empty lines within the delimited files for annotation.
 
-csv_ml is expected to
+In addition to parsing regular tabular formats with or without header, it can also parse structured delimited files and convert them to XML DOM or JSON objects.
+
+This article proposes the idea of using CSV format for defining structured relational data in additional to tabular data. The idea is nick named CSV_ML (Multi-level CSV). CSV_ML attempts to provide a simple unambiguous format for representing structured data that includes schema definition.
+
+CSV_ML is expected to
 - save storage space (about 50% compared to JSON and 60-70% compared to XML)
 - increase data transfer speeds
 - be faster to parse compared to XML and JSON

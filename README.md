@@ -1,4 +1,4 @@
-#Multi-level CSV (csv_ml)
+#Multi-level CSV (CSV_ML)
 
 This is an Advanced Parser for CSV (Comma-separated-value), TSV (Tab-separated-value), TDV (Tab-delimited-value) or even files with custom delimiters such as the Pipe symbol (|).  It supports streams and pull parsing for handling huge data files.  It also supports comments and empty lines within the delimited files for annotation.
 
@@ -12,6 +12,7 @@ CSV_ML is expected to
 - be faster to parse compared to XML and JSON
 - allow full schema definition and validation
 - make schema definition simple, lightweight and in-line compared to DTD or XML Schema
+- recognize standard data types including text (varchar), integer, real, date, datetime
 - allow database binding
 - be used in EAI (Application Integration) for import and export of data
 - be simpler to parse, allowing data to be available even in low memory devices

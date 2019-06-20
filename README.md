@@ -8,16 +8,16 @@ This project proposes the idea of using CSV format for defining structured relat
 
 # Advantages over XML and JSON
 
-CSV_ML is expected to
-- save storage space (about 50% compared to JSON and 60-70% compared to XML)
-- increase data transfer speeds
-- be faster to parse compared to XML and JSON
-- allow full schema definition and validation
-- make schema definition simple, lightweight and in-line compared to DTD or XML Schema
-- recognize standard data types including text (varchar), integer, real, date, datetime
-- allow database binding
-- be used in EAI (Application Integration) for import and export of data
-- be simpler to parse, allowing data to be available even in low memory devices
+CSV_ML
+- saves storage space (about 50% compared to JSON and 60-70% compared to XML)
+- increases data transfer speeds
+- is faster to parse compared to XML and JSON
+- allows full schema definition and validation
+- makes schema definition simple, lightweight and in-line compared to DTD or XML Schema
+- recognizes standard data types including text (varchar), integer, real, date, datetime
+- allows database binding
+- can be used in EAI (Application Integration) for import and export of data
+- is simpler to parse, allowing data to be available even in low memory devices
 
 # Applications
 - Enterprise Application Integration (EAI)
